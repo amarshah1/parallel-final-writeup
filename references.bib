@@ -6,3 +6,112 @@
   year   = {2026},
   note   = {Replace with real entries.},
 }
+
+% --- SMT solvers cited in the introduction ---
+
+@inproceedings{z3,
+  author    = {de Moura, Leonardo and Bj{\o}rner, Nikolaj},
+  title     = {{Z3}: An Efficient {SMT} Solver},
+  booktitle = {Tools and Algorithms for the Construction and Analysis of Systems (TACAS)},
+  year      = {2008},
+  pages     = {337--340},
+  publisher = {Springer},
+  doi       = {10.1007/978-3-540-78800-3_24},
+}
+
+@inproceedings{cvc5,
+  author    = {Barbosa, Haniel and Barrett, Clark and Brain, Martin and Kremer, Gereon and Lachnitt, Hanna and Mann, Makai and Mohamed, Abdalrhman and Mohamed, Mudathir and Niemetz, Aina and N{\"o}tzli, Andres and Ozdemir, Alex and Preiner, Mathias and Reynolds, Andrew and Sheng, Ying and Tinelli, Cesare and Zohar, Yoni},
+  title     = {{cvc5}: A Versatile and Industrial-Strength {SMT} Solver},
+  booktitle = {Tools and Algorithms for the Construction and Analysis of Systems (TACAS)},
+  year      = {2022},
+  pages     = {415--442},
+  publisher = {Springer},
+  doi       = {10.1007/978-3-030-99524-9_24},
+}
+
+% --- Portfolio approaches ---
+
+@inproceedings{wintersteiger09,
+  author    = {Wintersteiger, Christoph M. and Hamadi, Youssef and de Moura, Leonardo},
+  title     = {A Concurrent Portfolio Approach to {SMT} Solving},
+  booktitle = {Computer Aided Verification (CAV)},
+  year      = {2009},
+  pages     = {715--720},
+  publisher = {Springer},
+  doi       = {10.1007/978-3-642-02658-4_60},
+}
+
+@inproceedings{smtd,
+  author    = {Barrett, Clark and Chen, Pei-Wei and Cook, Byron and Dutertre, Bruno and Jones, Robert B. and Le, Nham and Reynolds, Andrew and Sheth, Kunal and Stephens, Christopher and Whalen, Michael W.},
+  title     = {{SMT-D}: New Strategies for Portfolio-Based {SMT} Solving},
+  booktitle = {Formal Methods in Computer-Aided Design (FMCAD)},
+  year      = {2024},
+}
+
+% --- Search-space partitioning ---
+
+@inproceedings{cube-and-conquer,
+  author    = {Heule, Marijn J. H. and Kullmann, Oliver and Wieringa, Siert and Biere, Armin},
+  title     = {Cube and Conquer: Guiding {CDCL} {SAT} Solvers by Lookaheads},
+  booktitle = {Hardware and Software: Verification and Testing (HVC)},
+  year      = {2011},
+  pages     = {50--65},
+  publisher = {Springer},
+  doi       = {10.1007/978-3-642-34188-5_8},
+}
+
+@inproceedings{cvc5-partition,
+  author    = {Wilson, Amalee and N{\"o}tzli, Andres and Reynolds, Andrew and Cook, Byron and Tinelli, Cesare and Barrett, Clark},
+  title     = {Partitioning Strategies for Distributed {SMT} Solving},
+  booktitle = {Formal Methods in Computer-Aided Design (FMCAD)},
+  year      = {2023},
+  pages     = {199--208},
+}
+
+@inproceedings{kolarik26,
+  author    = {Kol{\'a}rik, Tom{\'a}{\v{s}} and Hyv{\"a}rinen, Antti E. J. and Asadzadeh, Seyedmasoud and Sharygina, Natasha},
+  title     = {Parallel {SMT} Solving via Iterative Tree Partitioning},
+  booktitle = {Tools and Algorithms for the Construction and Analysis of Systems (TACAS)},
+  year      = {2026},
+  publisher = {Springer},
+  doi       = {10.1007/978-3-032-22752-2_7},
+}
+
+% --- Theory-aware decomposition (around the theory solver) ---
+
+@article{cheng18,
+  author  = {Cheng, Xi and Zhou, Min and Song, Xiaoyu and Gu, Ming and Sun, Jiaguang},
+  title   = {Parallelizing {SMT} Solving: Lazy Decomposition and Conciliation},
+  journal = {Artificial Intelligence},
+  volume  = {257},
+  pages   = {127--157},
+  year    = {2018},
+  doi     = {10.1016/j.artint.2018.01.001},
+}
+
+% --- Inside-the-theory-solver parallelism ---
+
+@article{bankovic17,
+  author  = {Bankovi{\'c}, Milan},
+  title   = {Parallelizing Simplex within {SMT} Solvers},
+  journal = {Artificial Intelligence Review},
+  volume  = {48},
+  pages   = {83--112},
+  year    = {2017},
+  doi     = {10.1007/s10462-016-9495-5},
+}
+
+@article{ccpcomplete,
+title = {On the relationship of congruence closureand unification},
+journal = {Journal of Symbolic Computation},
+volume = {7},
+number = {3},
+pages = {427-444},
+year = {1989},
+note = {Unification: Part 1},
+issn = {0747-7171},
+doi = {https://doi.org/10.1016/S0747-7171(89)80018-5},
+url = {https://www.sciencedirect.com/science/article/pii/S0747717189800185},
+author = {Paris C. Kanellakis and Peter Z. Revesz},
+abstract = {Congruence closure is a fundamental operation for symbolic computation. Unification closureis defined as its directional dual, i.e., on the same inputs but top-down as opposed to bottom-up. Unifying terms is another fundamental operation for symbolic computation and is commonly computed using unification closure. We clarify the directional duality by reducing unification closure to a special form of congruence closure. This reduction reveals a correspondence between repeated variables in terms to be unified and equalities of monadic ground terms. We then show that: (1) single equality congruence closure on a directed acyclic graph, and (2) acyclic congruence closure of a fixed number of equalities, are in the parallel complexity class NC. The directional dual unification closures in these two cases are known to be log-space complete for PTIME. As a consequence of our reductions we show that if the number of repeated variables in the input terms is fixed, then term unification can be performed in NC; this extends the known parallelizable cases of term unification. Using parallel complexity we also clarify the relationship of unification closure and the testing of deterministic finite automata for equivalence.}
+}

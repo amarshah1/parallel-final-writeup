@@ -4,7 +4,26 @@
 Satisfiability modulo theories (SMT) solvers are used to decided the satisfiability of first-order logic formulas. 
 State-of-the-art solvers such as Z3~\cite{z3} and cvc5~\cite{cvc5} can reason about a wide variety of ``theories'' such as uninterpreted functions, linear arithmetic, bit-vectors, and many others.
 
-SMT solvers, as the name suggests, consist of a Boolean satisfiability (SAT) solver to determine an assignment to the propositional skeleton and dedicated theory solvers to test the validity of theory lemmas. The performance of an SMT solver can be critical and much work has gone into parallelizing solvers. However, all existing parallel SMT solvers either (a)~use a portfolio approach where multiple solver instances run in parallel with different heuristics, or (b)~parallelize the SAT solver using techniques such as ``cube-and-conquer''~\cite{cube-and-conquer}. To the best of our knowledge, no SMT solver has parallelized the theory solvers themselves.
-This is a significant gap in the literature, as theory solvers can be a bottleneck in SMT solving, and parallelizing them could lead to significant performance improvements.
+ SMT solvers are widely used in a variety of applications, including software verification, hardware design, and mathematical theorem proving. Hence, the performance of SMT solvers is critical, and much work has gone into improving their efficiency. One promising avenue for improving the performance of SMT solvers is \emph{parallelization}: utilizing multiple processors to solve the problem faster. 
 
-In this paper, we present a novel parallel congruence closure algorithm for the theory of uninterpreted functions. Our algorithm is designed to efficiently utilize multiple cores and can be integrated into existing SMT solvers. We evaluate our algorithm on a suite of benchmarks and demonstrate significant performance improvements over existing sequential algorithms.
+SMT solvers, as the name suggests, consist of a Boolean satisfiability (SAT) solver to determine an assignment to the propositional skeleton and dedicated theory solvers to test the validity of theory lemmas. Existing work on parallel SMT, however, has focused on (a) portfolio approaches that run multiple differently-configured solver instances on the same input~\cite{wintersteiger09,smtd} or (b) techniques that involve partitioning the search space and having solvers run on the partitioned search space~\cite{cube-and-conquer,cvc5-partition,kolarik26,cheng18}. In all of these, the underlying theory solvers still run single-threaded on each subproblem. 
+% The one exception we are aware of is Banković's parallel simplex inside a linear-arithmetic theory solver~\cite{bankovic17}. 
+There is limited work on parallelizing the theory solvers themselves.
+This is a significant gap, as theory solvers can be a bottleneck in SMT solving, and parallelizing them could lead to significant performance improvements.
+
+To this end, we present a novel parallel congruence closure algorithm for the theory of uninterpreted functions. Our algorithm uses a concurrent union find data structure.
+
+\as{say more about the algorithm}
+
+While congruence closure is P-complete~\cite{ccpcomplete}, we show that our algorithm can achieve linear speedups on a synthetic benchmark suite. Our algorithm efficiently utilizes multiple cores and can be integrated into existing SMT solvers. We build a prototype SMT solver that incorporates our parallel congruence closure algorithm and evaluate it on a suite of SMT benchmarks, demonstrating significant performance improvements over a version with an existing sequential congruence closure algorithm.
+
+We also evaluate our algorithm on a suite of SMT benchmarks from the annual SMT competition~\cite{smtcomp} and demonstrate a speedup of TODO\% over a sequential implementation.
+\as{current implementation does not have backtracking -> need to implement backtracking and re-evaluate.}
+
+
+Finally, we show that this parallel congruence closure algorithm is useful beyond SMT solving: we evaluate our 
+algorithm on a set of equality saturation benchmarks~\cite{eqsat} from the Herbie project~\cite{herbie} and demonstrate significant performance improvements over a sequential implementation.
+\as{I emailed Oliver for this benchmarks suite}
+
+
+% We evaluate our algorithm on a suite of benchmarks and demonstrate significant performance improvements over existing sequential algorithms.

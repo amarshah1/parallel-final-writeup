@@ -13,6 +13,21 @@
 \usepackage{graphicx}
 \usepackage{textcomp}
 \usepackage{xcolor}
+\usepackage[square,comma,numbers,sort&compress]{natbib}      % Offers more control over citation appearance and bib spacing
+
+% --- todo notes ---
+% Comment out the next line (or pass [disable]) before camera-ready
+% to suppress every \todo / \zk / \as marker in one go.
+\usepackage[colorinlistoftodos,prependcaption,textsize=small]{todonotes}
+% \usepackage[disable]{todonotes}
+
+% Per-author inline todo macros. Usage: \zk{rephrase this} or \as{cite?}.
+\newcommand{\zk}[1]{\todo[inline,color=blue!20,size=\small]{\textbf{ZK:} #1}}
+\newcommand{\as}[1]{\todo[inline,color=green!20,size=\small]{\textbf{AS:} #1}}
+% Margin variants (shorter notes that don't break the paragraph).
+\newcommand{\zkm}[1]{\todo[color=blue!20,size=\scriptsize]{ZK: #1}}
+\newcommand{\asm}[1]{\todo[color=green!20,size=\scriptsize]{AS: #1}}
+
 
 % Hide the FMCAD logo in the title-page header for now.
 % (Use a single invisible space rather than empty content so that the
@@ -48,7 +63,6 @@
 \input{sections/4-evaluation}
 
 
-\nocite{placeholder} % Remove once you have real \cite{} commands.
 \bibliographystyle{IEEEtran}
 \bibliography{references}
 
