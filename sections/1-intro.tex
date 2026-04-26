@@ -1,0 +1,10 @@
+\section{Introduction}
+\label{sec:introduction}
+
+Satisfiability modulo theories (SMT) solvers are used to decided the satisfiability of first-order logic formulas. 
+State-of-the-art solvers such as Z3~\cite{z3} and cvc5~\cite{cvc5} can reason about a wide variety of ``theories'' such as uninterpreted functions, linear arithmetic, bit-vectors, and many others.
+
+SMT solvers, as the name suggests, consist of a Boolean satisfiability (SAT) solver to determine an assignment to the propositional skeleton and dedicated theory solvers to test the validity of theory lemmas. The performance of an SMT solver can be critical and much work has gone into parallelizing solvers. However, all existing parallel SMT solvers either (a)~use a portfolio approach where multiple solver instances run in parallel with different heuristics, or (b)~parallelize the SAT solver using techniques such as ``cube-and-conquer''~\cite{cube-and-conquer}. To the best of our knowledge, no SMT solver has parallelized the theory solvers themselves.
+This is a significant gap in the literature, as theory solvers can be a bottleneck in SMT solving, and parallelizing them could lead to significant performance improvements.
+
+In this paper, we present a novel parallel congruence closure algorithm for the theory of uninterpreted functions. Our algorithm is designed to efficiently utilize multiple cores and can be integrated into existing SMT solvers. We evaluate our algorithm on a suite of benchmarks and demonstrate significant performance improvements over existing sequential algorithms.

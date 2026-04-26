@@ -14,6 +14,11 @@
 \usepackage{textcomp}
 \usepackage{xcolor}
 
+% Hide the FMCAD logo in the title-page header for now.
+% (Use a single invisible space rather than empty content so that the
+%  enclosing \resizebox in the class file does not divide by zero.)
+\renewcommand{\fmcadsymbol}{\hphantom{x}}
+
 \begin{document}
 
 \title{A Parallel Congruence Closure Algorithm}
@@ -33,25 +38,15 @@
   Abstract goes here.
 \end{abstract}
 
-\section{Introduction}
-\label{sec:introduction}
 
-Introduction text.
+\input{sections/1-intro}
 
-\section{Background}
-\label{sec:background}
+\input{sections/2-background}
 
-\section{Approach}
-\label{sec:approach}
+\input{sections/3-algorithm}
 
-\section{Evaluation}
-\label{sec:evaluation}
+\input{sections/4-evaluation}
 
-\section{Related Work}
-\label{sec:related}
-
-\section{Conclusion}
-\label{sec:conclusion}
 
 \nocite{placeholder} % Remove once you have real \cite{} commands.
 \bibliographystyle{IEEEtran}
