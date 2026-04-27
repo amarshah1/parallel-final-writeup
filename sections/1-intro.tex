@@ -13,7 +13,28 @@ This is a significant gap, as theory solvers can be a bottleneck in SMT solving,
 
 To this end, we present a novel parallel congruence closure algorithm for the theory of uninterpreted functions. Our algorithm uses a concurrent union find data structure.
 
-\as{say more about the algorithm}
+\as{clean up the algorithm description }
+
+At a high level, our algorithm replaces the classical sequential
+worklist of Nelson and Oppen~\cite{nelson-oppen-cc} with a
+\emph{bulk-synchronous} closure loop in the spirit of equality-saturation engines such as egg~\cite{egg}.
+Initial equalities are unioned into a lock-free concurrent
+union-find~\cite{jayanti16}, marking each affected e-class as
+\emph{changed}. The algorithm then proceeds in rounds. In each round we
+(i)~collect the current frontier of changed classes in parallel,
+(ii)~gather every parent e-node whose canonical signature could have
+shifted, (iii)~hash each parent's signature under the current union-find
+roots, (iv)~group nodes by signature using a parallel
+semisort~\cite{semisort}, and (v)~union together every group that
+witnesses a new congruence. Each step is a pure data-parallel
+primitive—\texttt{filter}, \texttt{flat\_map}, \texttt{map}, semisort,
+and a parallel union pass—built on \textsc{ParlayLib}'s scheduler and
+sequence types~\cite{parlaylib}. The algorithm terminates when no round
+discovers a new merge, exactly mirroring the fixed point of the
+sequential procedure. The hashcons and the e-graph's child-to-parent
+index are maintained across rounds without per-element locks: writers
+only append, and concurrent reads see a consistent partition because
+the union-find linearizes through compare-and-swap.
 
 While congruence closure is P-complete~\cite{ccpcomplete}, we show that our algorithm can achieve linear speedups on a synthetic benchmark suite. Our algorithm efficiently utilizes multiple cores and can be integrated into existing SMT solvers. We build a prototype SMT solver that incorporates our parallel congruence closure algorithm and evaluate it on a suite of SMT benchmarks, demonstrating significant performance improvements over a version with an existing sequential congruence closure algorithm.
 

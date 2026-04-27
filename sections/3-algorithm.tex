@@ -1,2 +1,135 @@
 \section{Algorithm}
 \label{sec:alg}
+
+This section describes our parallel congruence closure procedure in
+detail. The algorithm rests on three components: a lock-free concurrent
+union-find that allows arbitrarily many threads to issue
+\textsc{find}/\textsc{union} concurrently
+(Section~\ref{subsec:uf}); a parallel semisort that lets each round
+group congruent e-node candidates by signature without a sequential
+hash-table bottleneck (Section~\ref{subsec:semisort}); and a
+bulk-synchronous, rounds-based outer loop that drives both to a
+congruence-closed fixed point (Section~\ref{subsec:rounds}). All three
+build on \textsc{ParlayLib}~\cite{parlaylib}, a shared-memory
+work-stealing runtime that supplies the sequence types and parallel
+primitives (\texttt{parallel\_for}, \texttt{filter},
+\texttt{flat\_map}, \texttt{group\_by\_key}) that we use throughout.
+
+\subsection{Concurrent Union-Find}
+\label{subsec:uf}
+
+We use the lock-free concurrent disjoint-set-union of Jayanti and
+Tarjan~\cite{jayanti16}. A union-find of capacity $n$ is represented as
+an array of $n$ atomic 32-bit words. Each word encodes either a
+\emph{rank} (when the node is a root, indicated by the high bit) or a
+\emph{parent pointer} into the same array (when the node is not a
+root). Both \textsc{find} and \textsc{union} are non-blocking: they
+read the current state, decide what update they would like to make,
+and install it via a compare-and-swap (CAS); on CAS failure they retry
+from a freshly-read state.
+
+\textsc{find}$(u)$ recursively walks parent pointers to a root, and on
+its way back attempts to install path compression by CAS-ing the
+walked node's parent slot directly to the root. Because the CAS only
+succeeds when the slot still points to the old parent, lost races are
+harmless: another thread has already installed an at-least-as-good
+shortcut. \textsc{union}$(u, v)$ first calls \textsc{find} on both
+endpoints, then attempts to CAS the smaller-rank root's slot from a
+rank value to a parent pointer to the other root, retrying from the
+top of the routine on failure. Equal ranks tie-break by node id and
+attempt a best-effort rank increment on the winning root with a second
+CAS.
+
+This UF supports the throughput regime that our outer loop demands:
+each round of congruence closure issues thousands to millions of
+\textsc{find} and \textsc{union} calls in parallel, and every operation
+linearizes regardless of contention.
+
+\subsection{Parallel Semisort}
+\label{subsec:semisort}
+
+Once an e-node's children have been canonicalized to their current UF
+roots, two e-nodes with the same operator and identical canonicalized
+child lists are \emph{congruent} and must be merged. Detecting
+congruences therefore reduces to grouping e-nodes by signature. A
+sequential implementation would use a hash table; doing this in
+parallel requires either fine-grained locking or a sorting-based
+alternative.
+
+We use the parallel \emph{semisort} of Gu, Shun, Sun, and
+Blelloch~\cite{semisort}. Semisort is a relaxation of sorting that
+suffices for grouping: rather than producing a totally-ordered output,
+it produces a permutation of the input in which all elements with
+equal keys are adjacent, with no ordering required between groups. For
+a sequence of $n$ items with $m$ distinct keys, semisort runs in
+$O(n)$ work and $O(\log n)$ span on a CRCW PRAM, and avoids the
+$O(n \log n)$ work of a comparison-based sort.
+
+In each closure round, we hash every candidate e-node's signature into
+a 64-bit value, mod a power-of-two number of buckets chosen
+proportional to the number of threads. We hand the (key, payload)
+sequence to ParlayLib's semisort, then process each bucket in
+parallel: within a bucket, a local sort plus an adjacent-pair scan
+identifies pairs of candidates that share a true signature (modulo
+hash collisions, checked via a full equality test on the canonicalized
+child lists).
+
+\subsection{Rounds-Based Congruence Closure}
+\label{subsec:rounds}
+
+The classical Nelson--Oppen procedure~\cite{nelson-oppen-cc} maintains
+a sequential worklist of e-classes whose use-sets must be re-examined
+after a merge. We replace it with a bulk-synchronous round structure
+that exposes parallelism within each round while preserving exactly
+the same fixed point. Algorithm~\ref{alg:rounds} sketches the loop;
+all numbered steps are data-parallel.
+
+\begin{algorithm}
+\caption{Parallel congruence closure (one round)}
+\label{alg:rounds}
+\textbf{Input:} e-graph $G$ with concurrent UF $U$, parent-index
+$P[\,\cdot\,]$, per-class \emph{changed} flags $C[\,\cdot\,]$, after a
+batch of initial unions has marked each affected class. \\
+\textbf{Output:} A new round's worth of merges; loop until no merges
+fire.
+\begin{enumerate}
+  \item \emph{Frontier.} In parallel over class ids, \texttt{filter} $C$
+        to collect $F = \{c : C[c]\}$ and clear the corresponding flags.
+  \item \emph{Gather.} \texttt{flat\_map} $F$ through $P$ to obtain the
+        list of candidate parent e-nodes whose signature might have
+        shifted.
+  \item \emph{Canonicalize.} \texttt{map} each candidate $n$ to a
+        triple $(h, \mathit{idx}, r)$ where $h$ is a 64-bit hash of
+        $(\mathrm{op}(n), U.\textsc{find}(c_1), \dots,
+                       U.\textsc{find}(c_k))$,
+        $\mathit{idx}$ is the candidate's position in the e-node array,
+        and $r = U.\textsc{find}(\mathrm{class}(n))$.
+  \item \emph{Group.} Hash $h$ into one of $B$ buckets and apply the
+        parallel semisort of Section~\ref{subsec:semisort}.
+  \item \emph{Detect merges.} In parallel over buckets, sort within
+        each bucket by $(h, \text{lexicographic canonicalized
+        children})$ and scan adjacent pairs: every pair with equal
+        signature whose representatives differ contributes a
+        $(r_a, r_b)$ pair to a new \emph{merge list}.
+  \item \emph{Apply.} In parallel over the merge list, call
+        $U.\textsc{union}(r_a, r_b)$ and set $C[r_a] = C[r_b] =
+        \texttt{true}$.
+\end{enumerate}
+\end{algorithm}
+
+The round repeats while step~6 produces any merges. Termination is
+guaranteed because each merge strictly reduces the number of distinct
+UF roots, and the loop discovers merges only through congruence; once
+the e-graph is closed, no candidate's signature has shifted and the
+merge list is empty.
+
+Several invariants make the parallel steps safe. The e-node array is
+append-only after the build phase, so step~3 reads but never mutates
+it. The parent index $P$ may be appended to during build but is never
+re-ordered or freed during closure. The \emph{changed} flags are a
+collection of independent atomic booleans, so step~6's writes do not
+race destructively. The only shared mutable state during a round is
+the union-find itself, and that state is correct under arbitrary
+concurrency by Jayanti--Tarjan's analysis. Because every step is a
+pure ParlayLib primitive, the entire round inherits ParlayLib's
+work-stealing scheduler and its associated complexity bounds.
