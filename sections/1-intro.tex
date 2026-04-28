@@ -1,50 +1,92 @@
 \section{Introduction}
 \label{sec:introduction}
 
-Satisfiability modulo theories (SMT) solvers are used to decided the satisfiability of first-order logic formulas. 
-State-of-the-art solvers such as Z3~\cite{z3} and cvc5~\cite{cvc5} can reason about a wide variety of ``theories'' such as uninterpreted functions, linear arithmetic, bit-vectors, and many others.
 
- SMT solvers are widely used in a variety of applications, including software verification, hardware design, and mathematical theorem proving. Hence, the performance of SMT solvers is critical, and much work has gone into improving their efficiency. One promising avenue for improving the performance of SMT solvers is \emph{parallelization}: utilizing multiple processors to solve the problem faster. 
+Congruence closure is a important algorithm in computer science. Automated theorem 
+proves use congruence closure to determine the satisfiability of logical formulas and 
+equality saturation uses congruence closure to determine the equivalence of programs.
+Congruence closure determines whether a set of equalities and disequalities
+between terms is satisfiable. For example, given the equalities 
+$a = b$ and $b = c$ and the disequality $f(a) \neq f(c)$, congruence closure can
 
-SMT solvers, as the name suggests, consist of a Boolean satisfiability (SAT) solver to determine an assignment to the propositional skeleton and dedicated theory solvers to test the validity of theory lemmas. Existing work on parallel SMT, however, has focused on (a) portfolio approaches that run multiple differently-configured solver instances on the same input~\cite{wintersteiger09,smtd} or (b) techniques that involve partitioning the search space and having solvers run on the partitioned search space~\cite{cube-and-conquer,cvc5-partition,kolarik26,cheng18}. In all of these, the underlying theory solvers still run single-threaded on each subproblem. 
-% The one exception we are aware of is Banković's parallel simplex inside a linear-arithmetic theory solver~\cite{bankovic17}. 
-There is limited work on parallelizing the theory solvers themselves.
-This is a significant gap, as theory solvers can be a bottleneck in SMT solving, and parallelizing them could lead to significant performance improvements.
 
-To this end, we present a novel parallel congruence closure algorithm for the theory of uninterpreted functions. Our algorithm uses a concurrent union find data structure.
+% Satisfiability modulo theories (SMT) solvers are used to decided the
+% satisfiability of first-order logic formulas. State-of-the-art solvers such as
+% Z3~\cite{z3} and cvc5~\cite{cvc5} can reason about a wide variety of
+% ``theories'' such as uninterpreted functions, linear arithmetic, bit-vectors,
+% and many others.
+
+Both equality saturation engines like egglog and SMT solvers like 
+ Z3~\cite{z3} and cvc5~\cite{cvc5} are widely used in
+a variety of applications, including software verification, hardware design, and
+mathematical theorem proving. Hence, their performance is critical,
+and much work has gone into improving their efficiency. One promising avenue for
+improving the performance of SMT solvers is \emph{parallelization}: utilizing
+multiple processors to solve the problem faster. 
+
+% SMT solvers, as the name suggests, consist of a Boolean satisfiability (SAT)
+% solver to determine an assignment to the propositional skeleton and dedicated
+% theory solvers to test the validity of theory lemmas. Existing work on parallel
+% SMT, however, has focused on (a) portfolio approaches that run multiple
+% differently-configured solver instances on the same
+% input~\cite{wintersteiger09,smtd} or (b) techniques that involve partitioning
+% the search space and having solvers run on the partitioned search
+% space~\cite{cube-and-conquer,cvc5-partition,kolarik26,cheng18}. In all of these,
+% the underlying theory solvers still run single-threaded on each subproblem. 
+% % The one exception we are aware of is Banković's parallel simplex inside a
+% % linear-arithmetic theory solver~\cite{bankovic17}. 
+% There is limited work on parallelizing the theory solvers themselves. This is a
+% significant gap, as theory solvers can be a bottleneck in SMT solving, and
+% parallelizing them could lead to significant performance improvements.
+
+To this end, we present a novel parallel congruence closure algorithm. Our algorithm uses a concurrent union find
+data structure.
 
 \as{clean up the algorithm description }
 
-At a high level, our algorithm replaces the classical sequential
-worklist of Nelson and Oppen~\cite{nelson-oppen-cc} with a
-\emph{bulk-synchronous} closure loop in the spirit of equality-saturation engines such as egg~\cite{egg}.
+At a high level, our algorithm replaces the classical sequential worklist of
+Nelson and Oppen~\cite{nelson-oppen-cc} with a \emph{bulk-synchronous} closure
+loop in the spirit of equality-saturation engines such as egg~\cite{egg}.
 Initial equalities are unioned into a lock-free concurrent
-union-find~\cite{jayanti16}, marking each affected e-class as
-\emph{changed}. The algorithm then proceeds in rounds. In each round we
-(i)~collect the current frontier of changed classes in parallel,
-(ii)~gather every parent e-node whose canonical signature could have
-shifted, (iii)~hash each parent's signature under the current union-find
-roots, (iv)~group nodes by signature using a parallel
-semisort~\cite{semisort}, and (v)~union together every group that
-witnesses a new congruence. Each step is a pure data-parallel
-primitive—\texttt{filter}, \texttt{flat\_map}, \texttt{map}, semisort,
-and a parallel union pass—built on \textsc{ParlayLib}'s scheduler and
-sequence types~\cite{parlaylib}. The algorithm terminates when no round
-discovers a new merge, exactly mirroring the fixed point of the
-sequential procedure. The hashcons and the e-graph's child-to-parent
-index are maintained across rounds without per-element locks: writers
-only append, and concurrent reads see a consistent partition because
-the union-find linearizes through compare-and-swap.
+union-find~\cite{jayanti16}, marking each affected e-class as \emph{changed}.
+The algorithm then proceeds in rounds. In each round we (i)~collect the current
+frontier of changed classes in parallel, (ii)~gather every parent e-node whose
+canonical signature could have shifted, (iii)~hash each parent's signature under
+the current union-find roots, (iv)~group nodes by signature using a parallel
+semisort~\cite{semisort}, and (v)~union together every group that witnesses a
+new congruence. Each step is a pure data-parallel primitive—\texttt{filter},
+\texttt{flat\_map}, \texttt{map}, semisort, and a parallel union pass—built on
+\textsc{ParlayLib}'s scheduler and sequence types~\cite{parlaylib}. The
+algorithm terminates when no round discovers a new merge, exactly mirroring the
+fixed point of the sequential procedure. The hashcons and the e-graph's
+child-to-parent index are maintained across rounds without per-element locks:
+writers only append, and concurrent reads see a consistent partition because the
+union-find linearizes through compare-and-swap.
 
-While congruence closure is P-complete~\cite{ccpcomplete}, we show that our algorithm can achieve linear speedups on a synthetic benchmark suite. Our algorithm efficiently utilizes multiple cores and can be integrated into existing SMT solvers. We build a prototype SMT solver that incorporates our parallel congruence closure algorithm and evaluate it on a suite of SMT benchmarks, demonstrating significant performance improvements over a version with an existing sequential congruence closure algorithm.
+While congruence closure is P-complete~\cite{ccpcomplete}, we show that our
+algorithm can achieve linear speedups on a synthetic benchmark suite. Our
+algorithm efficiently utilizes multiple cores and can be integrated into
+existing SMT solvers. 
 
-We also evaluate our algorithm on a suite of SMT benchmarks from the annual SMT competition~\cite{smtcomp} and demonstrate a speedup of TODO\% over a sequential implementation.
-\as{current implementation does not have backtracking -> need to implement backtracking and re-evaluate.}
+\as{add the right claims about our eval here}
+
+% We build a prototype SMT solver that incorporates our
+% parallel congruence closure algorithm and evaluate it on a suite of SMT
+% benchmarks, demonstrating significant performance improvements over a version
+% with an existing sequential congruence closure algorithm.
+
+% We also evaluate our algorithm on a suite of SMT benchmarks from the annual SMT
+% competition~\cite{smtcomp} and demonstrate a speedup of TODO\% over a sequential
+% implementation.
+% \as{current implementation does not have backtracking -> need to implement backtracking and re-evaluate.}
 
 
-Finally, we show that this parallel congruence closure algorithm is useful beyond SMT solving: we evaluate our 
-algorithm on a set of equality saturation benchmarks~\cite{eqsat} from the Herbie project~\cite{herbie} and demonstrate significant performance improvements over a sequential implementation.
-\as{I emailed Oliver for this benchmarks suite}
+% Finally, we show that this parallel congruence closure algorithm is useful
+% beyond SMT solving: we evaluate our algorithm on a set of equality saturation
+% benchmarks~\cite{eqsat} from the Herbie project~\cite{herbie} and demonstrate
+% significant performance improvements over a sequential implementation.
+% \as{I emailed Oliver for this benchmarks suite}
 
 
-% We evaluate our algorithm on a suite of benchmarks and demonstrate significant performance improvements over existing sequential algorithms.
+% We evaluate our algorithm on a suite of benchmarks and demonstrate significant
+% performance improvements over existing sequential algorithms.

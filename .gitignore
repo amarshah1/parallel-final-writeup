@@ -2,6 +2,8 @@
 # Created by https://www.gitignore.io/api/vim,latex,emacs,linux,macos,python,windows,sublimetext
 # Edit at https://www.gitignore.io/?templates=vim,latex,emacs,linux,macos,python,windows,sublimetext
 
+main.pdf 
+
 ### Emacs ###
 # -*- mode: gitignore; -*-
 *~
