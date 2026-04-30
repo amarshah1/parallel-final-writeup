@@ -1,6 +1,100 @@
 \section{Evaluation}
 \label{sec:eval}
 
+% \subsection{Benchmarks}
+% \label{sec:eval:benchmarks}
+
+% We designed a suite of synthetic QF\_UF benchmarks that, while small to
+% state, stress different aspects of congruence closure. All instances are
+% \texttt{unsat}-by-construction: each ends with a single disequality whose
+% violation is forced by the asserted equalities together with congruence.
+% Each family is parameterized by a single integer $n$, which we call the
+% benchmark's \emph{size}. Six families:
+
+% \paragraph{Polynomial families: grid, cube, quartic, quintic.}
+
+% These four families share the same template, generalized over the arity
+% $k$ of an uninterpreted function $f$ ($k = 2, 3, 4, 5$ respectively).
+% For a given $n$, the formula declares $2n$ uninterpreted constants
+% $a_0, \ldots, a_{n-1}$ and $b_0, \ldots, b_{n-1}$, asserts the
+% $n$ equalities $a_i = b_i$ for $i \in [0,n)$, and asserts a single
+% disequality between two balanced $g$-trees. The $a$-side $g$-tree's
+% leaves are
+% $\{f(a_{i_1}, \ldots, a_{i_k}) \mid (i_1, \ldots, i_k) \in [0,n)^k\}$,
+% and the $b$-side $g$-tree's leaves are the analogous set with each
+% $a$ replaced by $b$.
+% %
+% After the $n$ initial unions, congruence closure produces $n^k$
+% congruences in a single round (one per $k$-tuple, matching each
+% $f$-term on the $a$-side to its $b$-side counterpart). Climbing the
+% balanced $g$-tree then takes $\lceil \log_2(n^k) \rceil$ further
+% rounds---each round half the size of the previous---until the two
+% root terms collapse and the disequality is violated. Total
+% congruences: $\Theta(n^k)$, with the $n^k$-wide first round
+% dominating.
+
+% The four polynomial families let us isolate the effect of round
+% \emph{width} (how much parallel work there is to do at once) from
+% round \emph{depth} (how many serial round boundaries the algorithm
+% must cross). At fixed $n$, increasing $k$ multiplies the f-layer
+% width by $n$ without changing the round count materially. We sweep
+% $n$ over the practical range that fits in under 100\,MB per file:
+% $n \in [5, 80]$ for grid, $[5, 105]$ for cube, $[5, 38]$ for
+% quartic, and $[3, 18]$ for quintic.
+
+% \paragraph{Chain.}
+
+% The chain family contains a single congruence cascade that is
+% intrinsically sequential. For parameter $n$:
+% \[
+% a_0 = b_0 \;\wedge\;
+% \bigwedge_{i=0}^{n-1}
+% \big(a_{i+1} = f(a_i) \wedge b_{i+1} = f(b_i)\big)
+% \;\wedge\; a_n \neq b_n.
+% \]
+% %
+% Closing requires $n$ rounds, each of which produces exactly one
+% congruence ($f(a_i) \equiv f(b_i)$, hence $a_{i+1} \equiv b_{i+1}$).
+% There is no width to parallelize at any round; the chain serves as a
+% worst case showing the lower bound of what BSP closure can deliver.
+% Sweep range: $n \in [100, 4600]$ in steps of 500.
+
+% \paragraph{Exponential cascade.}
+
+% The \texttt{exp} family has the opposite shape: a single asserted
+% equality $a = b$ that triggers $2^{n+1} - 2$ congruences across $n$
+% rounds, with each round \emph{double} the size of the previous.
+% Round $i$ has $2^i$ congruences. The interesting feature is that
+% the tail rounds dominate---round $n$ alone holds half the work---so
+% parallel speedup grows aggressively with $n$ as long as memory holds
+% out. Sweep range: $n \in [1, 17]$ (odd values), since exp's file
+% size grows as $\Theta(2^n)$ and we keep files under 100\,MB.
+
+% \paragraph{Total corpus.} The full sweep yields roughly 90 instances
+% across the six families, ranging from a few hundred bytes (smallest
+% \texttt{chain} and \texttt{exp}) to 91\,MB (largest \texttt{quintic}
+% and \texttt{quartic}). All are open-source and reproducible from a
+% single Python generator (\texttt{gen\_bench.py}) so future work can
+% extend the range or add families with different congruence shapes.
+
+% \subsection{Setup}
+
+% \as{describe machine, thread counts, sequential baseline, what we
+% measure (close\_s vs wall\_s), how we compute speedup, etc.}
+
+% \subsection{Closure speedup}
+
+% \as{numbers from the sweep go here}
+
+% \subsection{End-to-end wall time}
+
+% \as{numbers from the sweep go here}
+
+% \subsection{Discussion}
+
+% \as{Amdahl's-law analysis, comparison vs nelson, where we win and
+% where we don't, etc.}
+
 We demonstrate the efficacy of our approach through a wide selection of benchmarks on various workloads. We present two sets of synthetic benchmarks.
 
 
