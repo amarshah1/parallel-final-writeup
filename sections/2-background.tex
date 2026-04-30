@@ -3,16 +3,24 @@
 
 \subsection{Congruence closure}
 
-A \emph{congruence closure} procedure decides whether a finite conjunction of
-equalities and disequalities over uninterpreted function symbols is
-satisfiable. Two terms are \emph{congruent} when they have the same
-operator and pairwise-congruent children: $f(s_1, \ldots, s_k) \equiv
-f(t_1, \ldots, t_k)$ whenever $s_i \equiv t_i$ for every $i$. Together with
-reflexivity, symmetry, and transitivity, this gives an equivalence
-relation on terms; closing under it propagates a small set of asserted
-equalities to all of their consequences. The decision problem is then
-trivial: the input is unsatisfiable iff some asserted disequality
-$s \neq t$ has $s$ and $t$ in the same closed equivalence class.
+The \emph{congruence closure} procedure decides whether a finite conjunction of
+equalities and disequalities over uninterpreted function symbols is satisfiable.
+Two terms are \emph{congruent} when they have the same operator and
+pairwise-congruent children: $f(s_1, \ldots, s_k) \equiv f(t_1, \ldots, t_k)$
+whenever $s_i \equiv t_i$ for every $i$. Together with reflexivity, symmetry,
+and transitivity of equality, this gives an equivalence relation on terms;
+closing under it propagates a small set of asserted equalities to all of their
+consequences.
+
+If an SMT solver is given a disequality $s \neq t$ and if $s$ and $t$ are in the
+same equivalence class, then it knows the formula is unsatisfiable. Similarly,
+an equality saturation engine may ask if two programs $P$ and $Q$ are equivalent
+under a set of rewrite rules by checking if $P$ and $Q$ are in the same
+equivalence class.
+
+Hence, the decision problem of congruence closure is to determine
+whether any two terms are in the same equivalence class
+after closing under the asserted equalities and congruence.
 
 The classical algorithm of Nelson and
 Oppen~\cite{nelson-oppen-cc} maintains a union-find over equivalence
@@ -22,9 +30,9 @@ been merged. Processing a class involves walking its
 \emph{parent list}---all e-nodes that mention this class as a direct
 child---re-canonicalizing each, and merging any pair that the hashcons
 identifies as a duplicate. New merges produce new worklist entries; the
-loop runs to a fixed point.
+loop runs to a fixed point. 
 
-\subsection{A motivating example}
+\subsection{Motivating Example}
 \label{sec:bg:motivating}
 
 To make the structure concrete, consider the smallest non-trivial
