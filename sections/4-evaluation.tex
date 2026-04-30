@@ -1,2 +1,42 @@
 \section{Evaluation}
 \label{sec:eval}
+
+We demonstrate the efficacy of our approach through a wide selection of benchmarks on various workloads. We present two sets of synthetic benchmarks.
+
+
+\subsection{Leaf-only Equalities on Binary Nodes}
+
+Our first set of benchmarks is parameterized by several parameters. $l$ denotes the number of leaves---i.e. the ``variables'' that appear within terms. $w$ denotes the \emph{width} of the benchmark: how many equalities are initially given before computing their congruence closure. The parameter $n$ denotes the total number of \emph{nodes}, which are non-leaf terms (e.g. function applications). The \emph{depth} $d$ denotes the depth of the terms, or how many nested function applications appear in the term. For example, the term $f(g(x))$ has depth 2, and the term $x$ (a single variable) has depth 0. The parameter $f$ denotes the number of function symbols. Finally, the parameter $p$ denotes the number of software threads.
+
+We now describe the experiments. We fix $f = 16$; for all experiments, we fix the number of function symbols at 16. Additionally, the arity of each function symbol is 2; we only construct binary operators for these experiments. For one set of experiments, we stratify our workloads into different size classes, which are shown in Table~\ref{tab:workloads}.
+
+\begin{table}[t]
+  \centering
+  \begin{tabular}{l r r r r r}
+    \toprule
+    workload & $n_{\text{leaves}}$ & $n_{\text{nodes}}$ & $n_{\text{merges}}$ & depth & $n_{\text{fns}}$ \\
+    \midrule
+    \texttt{large}   &     50\,000 &  1\,000\,000 &    100\,000 & 3 & 16 \\
+    \texttt{xl-d3}   &    100\,000 &  2\,000\,000 &    200\,000 & 3 & 16 \\
+    \texttt{2xl-d3}  &    200\,000 &  4\,000\,000 &    400\,000 & 3 & 16 \\
+    \texttt{4xl-d3}  &    400\,000 &  8\,000\,000 &    800\,000 & 3 & 16 \\
+    \texttt{8xl-d3}  &    800\,000 & 16\,000\,000 & 1\,600\,000 & 3 & 16 \\
+    \texttt{16xl-d3} &  1\,600\,000 & 32\,000\,000 & 3\,200\,000 & 3 & 16 \\
+    \bottomrule
+  \end{tabular}
+  \caption{Synthetic workload parameters. Each workload is a layered random
+  binary-tree DAG with $n_{\text{leaves}}$ \texttt{x}-leaves plus
+  $n_{\text{leaves}}$ \texttt{y}-leaves at the base, $n_{\text{nodes}}$
+  function nodes distributed across \emph{depth} levels with $n_{\text{fns}}$
+  uniformly-chosen operators per level, and $n_{\text{merges}}$ random
+  initial-union pairs (half \texttt{x}-\texttt{x}, half \texttt{y}-\texttt{y}).
+  All workloads use a fixed merge-density ratio
+  $n_{\text{merges}} / n_{\text{leaves}} = 2$ and a constant scaling
+  $n_{\text{nodes}} / n_{\text{leaves}} = 20$.}
+  \label{tab:workloads}
+\end{table}
+
+
+
+$l$, the numbers of ``leaves'' (i.e. the )
+Our first set of benchmarks is a synethetic benchmark that generates $w$ equalities of the form $i = j$ where both $i$ is sampled uniformly at random from the range $f$.
