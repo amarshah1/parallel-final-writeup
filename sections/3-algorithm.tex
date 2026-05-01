@@ -48,34 +48,15 @@ linearizes regardless of contention.
 \subsection{Parallel Semisort}
 \label{subsec:semisort}
 
-Once an e-node's children have been canonicalized to their current UF
-roots, two e-nodes with the same operator and identical canonicalized
-child lists are \emph{congruent} and must be merged. Detecting
-congruences therefore reduces to grouping e-nodes by signature. A
-sequential implementation would use a hash table; doing this in
-parallel requires either fine-grained locking or a sorting-based
-alternative.
-
-We use the parallel \emph{semisort} of Gu, Shun, Sun, and
-Blelloch~\cite{semisort}. Semisort is a relaxation of sorting that
-suffices for grouping: rather than producing a totally-ordered output,
-it produces a permutation of the input in which all elements with
-equal keys are adjacent, with no ordering required between groups. For
-a sequence of $n$ items with $m$ distinct keys, semisort runs in
-$O(n)$ work and $O(\log n)$ span on a CRCW PRAM, and avoids the
-$O(n \log n)$ work of a comparison-based sort.
-
-In each closure round, we hash every candidate e-node's signature into
-a 64-bit value, mod a power-of-two number of buckets chosen
-proportional to the number of threads. We hand the (key, payload)
-sequence to ParlayLib's semisort, then process each bucket in
-parallel: within a bucket, a local sort plus an adjacent-pair scan
-identifies pairs of candidates that share a true signature (modulo
-hash collisions, checked via a full equality test on the canonicalized
-child lists).
+At each round, we want to group congruent terms based on newly discovered equalities. To this end, we use the \emph{semisort} of Gu, Shun, Sun, and Blelloch~\cite{semisort}. Given a type $K$, and a sequence $S$ of $K$, an equality comparator $\mathit{eq} : K \times K \to \mathbb{B}$, and a hash function $h : K \to \mathbb{N}$, semisort will group equal keys in this sequence adjacently. Concretely, we use semisort to group congruence classes at each round.
 
 \subsection{Rounds-Based Congruence Closure}
 \label{subsec:rounds}
+
+At each round, we maintain a set of terms whose congruence classes may need to be updated. Intially, this comprises all terms appearing in base equalities. We then group congruent terms based on the equalities currently discovered, and merge the congruence classes of each group in the union-find. Grouping is accomplished via semisort---the \texttt{group\_by} operation in \texttt{parlay}---and merging congruence classes is accomplished through taking the union of the corresponding equality classes in the union-find.
+
+We then propagate terms whose congruence classes may have changed to the next round. These are exactly the \emph{predecessors} of nodes that whose congruence classes have changed that round. Specifically, if the congruence class of term $e$ has changed, then the congruence class of $f(e)$ may have changed as well. This requires maintaining the predecessors of every congruence class; specifically a mapping \textit{pred} between class identifiers and identifiers of predecessors of that class. This mapping must be updated every round; if two congruence classes are merged, then their predecessors must be merged as well. These rounds continue until there is no longer any work to do.
+
 
 The classical Nelson--Oppen procedure~\cite{nelson-oppen-cc} maintains
 a sequential worklist of e-classes whose use-sets must be re-examined
@@ -84,10 +65,71 @@ that exposes parallelism within each round while preserving exactly
 the same fixed point. Algorithm~\ref{alg:rounds} sketches the loop;
 all numbered steps are data-parallel.
 
+\begin{algorithmic}[1]
+    \Function{Congruent}{X, Y}
+      \If{$X = f(M_1,\ldots,M_n)$ and $Y = f(N_1,\ldots,N_n)$}
+        \State \Return $\Call{Find}{M_i} = \Call{Find}{N_i}$ for all $i = 1,\ldots,n$
+      \Else 
+        \State \Return \textbf{false}
+      \EndIf
+    \EndFunction
+
+    \Function{MergeCongruenceClass}{\textit{Class}}
+      \If{$\mathit{Class} = \{e\}$}
+        \State \Return{$e$} \Comment{Singleton class, return representative}
+      \EndIf
+      \State $n \gets |\textit{Class}|$
+      \State $L \gets \mathit{Class}[0,\ldots,\frac{n}{2}]$
+      \State $R \gets \mathit{Class}[\frac{n}{2},\ldots,n]$
+      \State $\rhd$ Merge left and right halves, get their representatives
+      \State $l, r \gets \Call{MergeCongruenceClass}{L} \parallel \Call{MergeCongruenceClass}{R}$
+      \Return $\Call{Union}{l, r}$ \Comment{Union left and right reps, return root}
+    \EndFunction
+
+    \Function{ParallelClose}{equalities = $\{e_1 = e_1', \ldots, e_w = e_w'\}$}
+        \State $\mathit{Frontier} \gets \text{every term appearing in } \mathit{equalities}$
+        \While{$\mathit{Frontier}$ is not empty}
+          \State $\mathit{groups} \gets \text{congruence classes quotiented by } \textsc{Congurent}$.
+          \ParFor{$\mathit{group} \in \mathit{groups}$}
+            \State $\rhd$ Merge every term within congruence class
+            \State $\mathit{rep} \gets \Call{Merge}{\mathit{group}}$
+            \State $\rhd$ Construct new parent lists
+            \State $\mathit{groups}[\mathit{rep}] \gets \Call{ConcatMap}{\lambda \mathit{group}. \; \mathit{Parents}[\mathit{group}]}$
+          \EndParFor
+          \State $\mathit{Frontier} \gets \Call{Flattem}{\mathit{groups}}$
+        \EndWhile
+    \EndFunction
+\end{algorithmic}
+
+% \begin{algorithmic}[1]
+%     \Function{Merge}{M, N}
+%         \If{$\Call{Find}{M} = \Call{Find}{N}$}
+%             \State \Return
+%         \EndIf
+%         \State \Call{Union}{M,N}
+%         \State Let $P_M$ be the predecessors associated with the congruence class of $M$
+%         \State Let $P_N$ be the predecessors associated with the congruence class of $N$
+%         \For{$(X, Y) \in P_M \times P_N$}
+%           \If{$\Call{Find}{X} \neq \Call{Find}{Y}$ and $\Call{Congruent}{X, Y}$}
+%             \State $\Call{Merge}{X, Y}$
+%           \EndIf
+%         \EndFor
+%     \EndFunction
+%     \Function{Congruent}{X, Y}
+%       \If{$X = f(M_1,\ldots,M_n)$ and $Y = f(N_1,\ldots,N_n)$}
+%         \State \Return $\Call{Find}{M_i} = \Call{Find}{N_i}$ for all $i = 1,\ldots,n$
+%       \Else 
+%         \State \Return \textbf{false}
+%       \EndIf
+%     \EndFunction
+% \end{algorithmic}
+
 \begin{algorithm}
 \caption{Parallel congruence closure (one round)}
 \label{alg:rounds}
-\textbf{Input:} e-graph $G$ with concurrent UF $U$, parent-index
+\textbf{Input:} 
+
+e-graph $G$ with concurrent UF $U$, parent-index
 $P[\,\cdot\,]$, per-class \emph{changed} flags $C[\,\cdot\,]$, after a
 batch of initial unions has marked each affected class. \\
 \textbf{Output:} A new round's worth of merges; loop until no merges
