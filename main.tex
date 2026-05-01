@@ -12,10 +12,23 @@
 \usepackage{algorithm}
 \usepackage{algorithmic}
 \usepackage{graphicx}
+\usepackage{subcaption}
 \usepackage{textcomp}
 \usepackage{xcolor}
 \usepackage{booktabs} 
 \usepackage[square,comma,numbers,sort&compress]{natbib}      % Offers more control over citation appearance and bib spacing
+
+% Relax float-placement parameters so figures don't get pushed to the end.
+\renewcommand{\topfraction}{0.95}
+\renewcommand{\bottomfraction}{0.95}
+\renewcommand{\textfraction}{0.05}
+\renewcommand{\floatpagefraction}{0.7}
+\renewcommand{\dbltopfraction}{0.95}
+\renewcommand{\dblfloatpagefraction}{0.7}
+\setcounter{topnumber}{3}
+\setcounter{bottomnumber}{3}
+\setcounter{totalnumber}{6}
+\setcounter{dbltopnumber}{3}
 
 % --- todo notes ---
 % Comment out the next line (or pass [disable]) before camera-ready
@@ -63,6 +76,8 @@
 \input{sections/3-algorithm}
 
 \input{sections/4-evaluation}
+
+\input{sections/5-discussion.tex}
 
 
 \bibliographystyle{IEEEtran}

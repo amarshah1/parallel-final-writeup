@@ -38,12 +38,14 @@ runs to a fixed point.
 
 To make the structure concrete, consider the formula:
 %
-\begin{align*}
+\begin{equation}\label{ex:formula}
+\begin{aligned}
 & \;\;\;\;\;\; a_0 = b_0 \\
 &\;\land\; a_1 = b_1 \\
 &\;\land\;g(f(a_0, a_0), f(a_0, a_1),\, f(a_1, a_0), f(a_1, a_1)) \\
 & \quad \neq g(f(b_0, b_0), f(b_0, b_1),\, f(b_1, b_0), f(b_1, b_1))
-\end{align*}
+\end{aligned}
+\end{equation}
 %
 This formula consists of two equalities $a_0 = b_0$ and $a_1 = b_1$, and a single
 disequality between two terms built from $f$ and $g$. The disequality compares
@@ -71,16 +73,14 @@ We make these intuitions precise in Section~\ref{sec:alg}.
 
 \subsection{ParlayLib and BSP-style closure}
 
-Our implementation uses ParlayLib~\cite{parlaylib}, a C++ work-stealing runtime
-with composable parallel primitives over a contiguous \texttt{parlay::sequence}
-type. The primitives we rely on most directly are \texttt{parallel\_for},
-\texttt{filter}, \texttt{flatten}, and a parallel
-\emph{semisort}~\cite{semisort}. The semisort takes a sequence of (hash,
-payload) pairs and reorganizes them so that all entries with the same hash are
-contiguous; we use it to group e-nodes by canonical signature within a closure
-round. ParlayLib's scheduler controls the number of worker threads via the
-\texttt{PARLAY\_NUM\_THREADS} environment variable, which we use to sweep core
-counts in our evaluation.
+Our implementation uses ParlayLib~\cite{parlaylib}, a C++ library for efficient 
+parallel algorithms. We rely on Parlay Lib's \texttt{parallel\_for}, \texttt{filter},
+\texttt{flatten}, and a parallel \emph{semisort}~\cite{semisort}. The semisort
+takes a sequence of (hash, payload) pairs and reorganizes them so that all
+entries with the same hash are contiguous; we use it to group e-nodes by
+canonical signature within a closure round. ParlayLib's scheduler controls the
+number of worker threads via the \texttt{PARLAY\_NUM\_THREADS} environment
+variable, which we use to sweep core counts in our evaluation.
 
 A \emph{bulk-synchronous parallel} (BSP) pass alternates between parallel work
 and global barriers. Our parallel closure is structured this way: each round

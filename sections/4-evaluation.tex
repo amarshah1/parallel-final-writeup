@@ -1,116 +1,85 @@
 \section{Evaluation}
 \label{sec:eval}
 
-% \subsection{Benchmarks}
-% \label{sec:eval:benchmarks}
+\begin{figure*}[!t]
+  \centering
+  \begin{subfigure}[t]{0.48\linewidth}
+    \centering
+    \includegraphics[width=\linewidth]{plots/random_loglog.png}
+    \caption{Runtime vs. thread count (log-log).}
+    \label{fig:random:loglog}
+  \end{subfigure}\hfill
+  \begin{subfigure}[t]{0.48\linewidth}
+    \centering
+    \includegraphics[width=\linewidth]{plots/random_phasebar_combined.png}
+    \caption{Per-phase time breakdown.}
+    \label{fig:random:phasebar}
+  \end{subfigure}
+  \caption{Random leaf-only benchmarks on binary nodes.}
+  \label{fig:random}
+\end{figure*}
 
-% We designed a suite of synthetic QF\_UF benchmarks that, while small to
-% state, stress different aspects of congruence closure. All instances are
-% \texttt{unsat}-by-construction: each ends with a single disequality whose
-% violation is forced by the asserted equalities together with congruence.
-% Each family is parameterized by a single integer $n$, which we call the
-% benchmark's \emph{size}. Six families:
+In this section, we evaluate our parallel congruence closure algorithm on a
+number of benchmarks in order to answer the following research questions:
 
-% \paragraph{Polynomial families: grid, cube, quartic, quintic.}
+\begin{itemize}
+  \item \textbf{RQ1:} Does our parallel congruence closure algorithm achieve a
+  meaningful speedup over a sequential implementation and how does this speedup
+  scale with the number of threads?
+  \item \textbf{RQ2:} What characterizes the type of benchmark that our parallel
+  congruence algorithm performs well on?
+  \item \textbf{RQ3:} How does our parallel congruence closure algorithm perform
+  on real-world benchmarks, such as those from an SMT solver or an equality
+  saturation engine?
+\end{itemize}
 
-% These four families share the same template, generalized over the arity
-% $k$ of an uninterpreted function $f$ ($k = 2, 3, 4, 5$ respectively).
-% For a given $n$, the formula declares $2n$ uninterpreted constants
-% $a_0, \ldots, a_{n-1}$ and $b_0, \ldots, b_{n-1}$, asserts the
-% $n$ equalities $a_i = b_i$ for $i \in [0,n)$, and asserts a single
-% disequality between two balanced $g$-trees. The $a$-side $g$-tree's
-% leaves are
-% $\{f(a_{i_1}, \ldots, a_{i_k}) \mid (i_1, \ldots, i_k) \in [0,n)^k\}$,
-% and the $b$-side $g$-tree's leaves are the analogous set with each
-% $a$ replaced by $b$.
-% %
-% After the $n$ initial unions, congruence closure produces $n^k$
-% congruences in a single round (one per $k$-tuple, matching each
-% $f$-term on the $a$-side to its $b$-side counterpart). Climbing the
-% balanced $g$-tree then takes $\lceil \log_2(n^k) \rceil$ further
-% rounds---each round half the size of the previous---until the two
-% root terms collapse and the disequality is violated. Total
-% congruences: $\Theta(n^k)$, with the $n^k$-wide first round
-% dominating.
+We demonstrate the efficacy and limitations of our approach through a wide
+selection of benchmarks on various workloads. In \autoref{sec:eval:random}, we
+discuss a randomly generated benchmark suite to stress test our algorithm. In
+\autoref{sec:eval:synthetic}, we discuss a synthetic benchmark suite that allows
+us to dial up the depth and width of the benchmark to better understand how
+these parameters affect the performance of our algorithm. Finally, in
+\autoref{sec:eval:egg}, we discuss a set of benchmarks from the Herbie floating
+point optimizer~\cite{herbie} that in turn calls the egg equality saturation
+engine~\cite{egg}.
 
-% The four polynomial families let us isolate the effect of round
-% \emph{width} (how much parallel work there is to do at once) from
-% round \emph{depth} (how many serial round boundaries the algorithm
-% must cross). At fixed $n$, increasing $k$ multiplies the f-layer
-% width by $n$ without changing the round count materially. We sweep
-% $n$ over the practical range that fits in under 100\,MB per file:
-% $n \in [5, 80]$ for grid, $[5, 105]$ for cube, $[5, 38]$ for
-% quartic, and $[3, 18]$ for quintic.
+All experiments were performed on the Bridges-2 supercomputer on nodes with 128
+cores and 256 GB RAM~\cite{bridges}. The node consisted of NVMe SSD (3.84TB);
+Mellanox ConnectX-6 HDR Infiniband 200Gb/s Adapter; and two AMD EPYC 7742 CPUS (
+each with 64 cores, 2.25-3.40GHz, 256MB L3, and 8 memory channels).
 
-% \paragraph{Chain.}
+For each run, we perform 1 warmup run and 5 timed runs, and we report the median of the 5 timed runs.
 
-% The chain family contains a single congruence cascade that is
-% intrinsically sequential. For parameter $n$:
-% \[
-% a_0 = b_0 \;\wedge\;
-% \bigwedge_{i=0}^{n-1}
-% \big(a_{i+1} = f(a_i) \wedge b_{i+1} = f(b_i)\big)
-% \;\wedge\; a_n \neq b_n.
-% \]
-% %
-% Closing requires $n$ rounds, each of which produces exactly one
-% congruence ($f(a_i) \equiv f(b_i)$, hence $a_{i+1} \equiv b_{i+1}$).
-% There is no width to parallelize at any round; the chain serves as a
-% worst case showing the lower bound of what BSP closure can deliver.
-% Sweep range: $n \in [100, 4600]$ in steps of 500.
+\subsection{Leaf-only Equalities on Binary Nodes}~\label{sec:eval:random}
 
-% \paragraph{Exponential cascade.}
+Our first set of benchmarks is parameterized by several parameters. $l$ denotes
+the number of leaves---i.e. the ``variables'' that appear within terms. $w$
+denotes the \emph{width} of the benchmark: how many equalities are initially
+given before computing their congruence closure. The parameter $n$ denotes the
+total number of \emph{nodes}, which are non-leaf terms (e.g. function
+applications). The \emph{depth} $d$ denotes the depth of the terms, or how many
+nested function applications appear in the term. For example, the term $f(g(x))$
+has depth 2, and the term $x$ (a single variable) has depth 0. The parameter $f$
+denotes the number of function symbols. Finally, the parameter $p$ denotes the
+number of software threads.
 
-% The \texttt{exp} family has the opposite shape: a single asserted
-% equality $a = b$ that triggers $2^{n+1} - 2$ congruences across $n$
-% rounds, with each round \emph{double} the size of the previous.
-% Round $i$ has $2^i$ congruences. The interesting feature is that
-% the tail rounds dominate---round $n$ alone holds half the work---so
-% parallel speedup grows aggressively with $n$ as long as memory holds
-% out. Sweep range: $n \in [1, 17]$ (odd values), since exp's file
-% size grows as $\Theta(2^n)$ and we keep files under 100\,MB.
-
-% \paragraph{Total corpus.} The full sweep yields roughly 90 instances
-% across the six families, ranging from a few hundred bytes (smallest
-% \texttt{chain} and \texttt{exp}) to 91\,MB (largest \texttt{quintic}
-% and \texttt{quartic}). All are open-source and reproducible from a
-% single Python generator (\texttt{gen\_bench.py}) so future work can
-% extend the range or add families with different congruence shapes.
-
-% \subsection{Setup}
-
-% \as{describe machine, thread counts, sequential baseline, what we
-% measure (close\_s vs wall\_s), how we compute speedup, etc.}
-
-% \subsection{Closure speedup}
-
-% \as{numbers from the sweep go here}
-
-% \subsection{End-to-end wall time}
-
-% \as{numbers from the sweep go here}
-
-% \subsection{Discussion}
-
-% \as{Amdahl's-law analysis, comparison vs nelson, where we win and
-% where we don't, etc.}
-
-We demonstrate the efficacy of our approach through a wide selection of benchmarks on various workloads. We present two sets of synthetic benchmarks.
-
-
-\subsection{Leaf-only Equalities on Binary Nodes}
-
-Our first set of benchmarks is parameterized by several parameters. $l$ denotes the number of leaves---i.e. the ``variables'' that appear within terms. $w$ denotes the \emph{width} of the benchmark: how many equalities are initially given before computing their congruence closure. The parameter $n$ denotes the total number of \emph{nodes}, which are non-leaf terms (e.g. function applications). The \emph{depth} $d$ denotes the depth of the terms, or how many nested function applications appear in the term. For example, the term $f(g(x))$ has depth 2, and the term $x$ (a single variable) has depth 0. The parameter $f$ denotes the number of function symbols. Finally, the parameter $p$ denotes the number of software threads.
-
-We now describe the experiments. We fix $f = 16$; for all experiments, we fix the number of function symbols at 16. Additionally, the arity of each function symbol is 2; we only construct binary operators for these experiments. For one set of experiments, we stratify our workloads into different size classes, which are shown in Table~\ref{tab:workloads}.
+We now describe the experiments. We fix $f = 16$ and the arity of each function
+symbol to 2. For one set of experiments, we stratify our workloads into
+different size classes, which are shown in Table~\ref{tab:workloads}.
 
 \begin{table}[t]
   \centering
   \begin{tabular}{l r r r r r}
     \toprule
-    workload & $n_{\text{leaves}}$ & $n_{\text{nodes}}$ & $n_{\text{merges}}$ & depth & $n_{\text{fns}}$ \\
+    workload & $n_{\text{leaves}}$ & $n_{\text{nodes}}$ & $n_{\text{merges}}$ &
+    depth & $n_{\text{fns}}$ \\
     \midrule
+    \texttt{small}   &      1\,000 &     10\,000 &      2\,000 & 1 &  4 \\
+    \texttt{deep-s}  &      1\,000 &     10\,000 &      2\,000 & 3 &  4 \\
+    \texttt{medium}  &     10\,000 &    200\,000 &     20\,000 & 1 &  8 \\
+    \texttt{deep-m}  &     10\,000 &    200\,000 &     20\,000 & 3 &  8 \\
     \texttt{large}   &     50\,000 &  1\,000\,000 &    100\,000 & 3 & 16 \\
+    \texttt{deep-l}  &     50\,000 &  1\,000\,000 &    100\,000 & 3 & 16 \\
     \texttt{xl-d3}   &    100\,000 &  2\,000\,000 &    200\,000 & 3 & 16 \\
     \texttt{2xl-d3}  &    200\,000 &  4\,000\,000 &    400\,000 & 3 & 16 \\
     \texttt{4xl-d3}  &    400\,000 &  8\,000\,000 &    800\,000 & 3 & 16 \\
@@ -120,17 +89,107 @@ We now describe the experiments. We fix $f = 16$; for all experiments, we fix th
   \end{tabular}
   \caption{Synthetic workload parameters. Each workload is a layered random
   binary-tree DAG with $n_{\text{leaves}}$ \texttt{x}-leaves plus
-  $n_{\text{leaves}}$ \texttt{y}-leaves at the base, $n_{\text{nodes}}$
-  function nodes distributed across \emph{depth} levels with $n_{\text{fns}}$
+  $n_{\text{leaves}}$ \texttt{y}-leaves at the base, $n_{\text{nodes}}$ function
+  nodes distributed across \emph{depth} levels with $n_{\text{fns}}$
   uniformly-chosen operators per level, and $n_{\text{merges}}$ random
   initial-union pairs (half \texttt{x}-\texttt{x}, half \texttt{y}-\texttt{y}).
-  All workloads use a fixed merge-density ratio
-  $n_{\text{merges}} / n_{\text{leaves}} = 2$ and a constant scaling
-  $n_{\text{nodes}} / n_{\text{leaves}} = 20$.}
+  All workloads use a fixed merge-density ratio $n_{\text{merges}} /
+  n_{\text{leaves}} = 2$ and a constant scaling $n_{\text{nodes}} /
+  n_{\text{leaves}} = 20$.}
   \label{tab:workloads}
 \end{table}
 
+\as{double check that the numbers in this table are correct}
 
 
-$l$, the numbers of ``leaves'' (i.e. the )
-Our first set of benchmarks is a synethetic benchmark that generates $w$ equalities of the form $i = j$ where both $i$ is sampled uniformly at random from the range $f$.
+
+$l$, the numbers of ``leaves'' (i.e. the ) Our first set of benchmarks is a
+synethetic benchmark that generates $w$ equalities of the form $i = j$ where
+both $i$ is sampled uniformly at random from the range $f$.
+
+\as{update \autoref{fig:random} when we have all the results for XL benchmarks.}
+
+
+\autoref{fig:random:loglog} shows the runtime of our parallel congruence closure
+We observe that on workloads with more nodes, our algorithm achieves a close to
+linear speedup over the sequential version. This plateaus at around 64 threads,
+for instance, 32-XL achieves a speedup of TODO\% on 64 threads and TODO\% on 128
+threads.
+
+While varying the number of nodes, leads to better speedups, the results for
+varying the depth is more complicated. For instance, while \texttt{deep-s} and
+\texttt{deep-l} achieve greater speedups than their less deep counterparts,
+\texttt{deep-m} achieves a smaller speedup than \texttt{medium}. This is likely
+because the depth of the benchmark affects the number of rounds of congruence
+closure. Our algorithm only parallelizes over the merges within a round, but not
+over the total number of rounds. We evaluate this further in
+\autoref{sec:eval:synthetic}.
+
+Finally, \autoref{fig:random:phasebar} shows the time breakdown in each round.
+It takes the median percentage of time per round from all of the benchmarks.
+We measure three rounds: (a) frontier is the parallel \texttt{filter} to gather
+the frontier of changed classes, (b) semisort is the parallel semisort to group
+parent e-nodes by their current, and (c) consolidate is the parallel pass to union
+together all pairs of the same class in the semisort output. We notice that the
+semisort is the most expensive phase, taking around TODO\% of the time, while
+the frontier and consolidate phases take around TODO\% and TODO\% respectively.
+This suggests that optimizing the semisort phase could lead to significant
+performance improvements.
+
+We notice that semisort is initially the largest phase in the first round, but
+as we get into later rounds it becomes cheaper as we have fewer and fewer nodes
+in the frontier.
+
+\subsection{Varying Depth and Width}~\label{sec:eval:synthetic}
+
+\begin{figure*}[!t]
+  \centering
+  \begin{subfigure}[t]{0.48\linewidth}
+    \centering
+    \includegraphics[width=\linewidth]{plots/cube_decomp_loglog.png}
+    \caption{Runtime vs. thread count (log-log).}
+    \label{fig:cube:loglog}
+  \end{subfigure}\hfill
+  \begin{subfigure}[t]{0.48\linewidth}
+    \centering
+    \includegraphics[width=\linewidth]{plots/cube_decomp_round_sizes.png}
+    \caption{Per-round merge counts.}
+    \label{fig:cube:rounds}
+  \end{subfigure}
+  \caption{Synthetic benchmarks varying depth and width.}
+  \label{fig:cube}
+\end{figure*}
+
+To better understand the relationship between the depth (i.e. number of rounds of congruence closure)
+and the width (i.e. number of merges per round) of the benchmark and the performance of our algorithm, we design a synthetic benchmark suite that allows us to dial up these parameters.
+
+Our benchmark suite is based on the example in \autoref{ex:formula}. We create a benchmark with $2k$ leaves $a_1, \ldots, a_k$ and $b_1, \ldots, b_k$, and we assert the equalities $a_i = b_i$ for all $i$. We then have a single disequality between two terms built from $f$ and $g$. The disequality compares two applications of $g$, whose four arguments are the $f$-terms over the index set $\{1, ..., k\}^2$. The expected outcome is \texttt{unsat}. Then we create a $3^k$ terms of the form $f(a_i, a_j, a_k)$, which must be congruent to the corresponding $f(b_i, b_j, b_k)$ terms. Thus, $k$ parameterizes the width of the benchmark, as it controls how many merges are implied by the initial $k$ equalities. The depth is parameterized by some $d$ which controls how many nested $g$ applications we have. Each round will have $\frac1d$ of the merges of the previous round, so a larger
+$d$ means a slower depth. We can observe this in \autoref{fig:cube:rounds}.
+
+\autoref{fig:cube:loglog} shows the runtime of our parallel congruence closure algorithm on this benchmark suite. We observerve that increasing $k$ and hence the width of the benchmark leads to better speedups, while decreasing $d$ and hence increasing the depth of the benchmark has minimal impact. We achieve speedups of up to \_ on 128 cores for $k=155$ and $d=$TODO. This suggests that our algorithm performs well on benchmarks with a large number of merges per round, and is not significantly affected by the total number of rounds of congruence closure.
+
+
+% We can then nest this structure to create more rounds of congruence closure. For instance, we can have a disequality between two applications of $g$ whose arguments are the $f(a_i, a_j, a_k)$ terms, which would require us to first merge all of the $f$-terms before we can merge the two $g$-terms. This would give us a benchmark with depth 2. We can then repeat this process to create benchmarks with depth 3, 4, and so on.
+
+% Finally, we have a single disequality between two terms built from $f$ and $g$. The disequality compares two applications of $g$, whose four arguments are the $f$-terms over the index set $\{1, ..., k\}^3$. The expected outcome is \texttt{unsat}.
+
+
+\subsection{Egg}~\label{sec:eval:egg}
+
+\begin{figure*}[!t]
+  \centering
+  \begin{subfigure}[t]{0.48\linewidth}
+    \centering
+    \includegraphics[width=\linewidth]{plots/egg_loglog.png}
+    \caption{Runtime vs. thread count (log-log).}
+    \label{fig:egg:loglog}
+  \end{subfigure}\hfill
+  \begin{subfigure}[t]{0.48\linewidth}
+    \centering
+    \includegraphics[width=\linewidth]{plots/egg_round_sizes.png}
+    \caption{Per-round merge counts.}
+    \label{fig:egg:rounds}
+  \end{subfigure}
+  \caption{Herbie/egg equality saturation benchmarks.}
+  \label{fig:egg}
+\end{figure*}
