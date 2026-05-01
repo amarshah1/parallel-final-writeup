@@ -1,7 +1,26 @@
 \section{Discussion and Future Work}
 \label{sec:disc}
 
-\subsection{Answer to Research Questions}
+\subsection{Answer to Research Questions}~\label{sec:disc:rq}
+
+We answer the research questions as follows:
+
+\begin{itemize}
+  \item \textbf{RQ1:} Our parallel congruence closure algorithm achieves a sublinear,
+  but meaningful speedup on random benchmarks, a synthetic benchmark suite
+  designed to stress test our algorithm, and a set of equality saturation
+  benchmarks~\cite{eqsat}. We observe meaningful speedups up to 32 cores, but we experienc
+  a pleateau on 32 and then 64 cores.
+  \item \textbf{RQ2:} Our algorithm tends to perform better on benchmarks with a large
+  number of merges per round. Having more rounds of congruence closure does not necessarily
+  lead to worse performance, but it does not lead to better performance either as we only 
+  parallelize within rounds.
+  \item \textbf{RQ3:} Our algorithm provides a meaningful speedup over a
+  sequential implementation on the egg benchmarks. Future work should evaluate
+  our algorithm on benchmarks from SMT solvers and  more challenging equality
+  saturation benchmarks such as \texttt{egg-cc}~\cite{eggcc}.
+\end{itemize}
+
 
 
 \subsection{Limitations of Evaluation}

@@ -80,13 +80,17 @@ takes a sequence of (hash, payload) pairs and reorganizes them so that all
 entries with the same hash are contiguous; we use it to group e-nodes by
 canonical signature within a closure round. ParlayLib's scheduler controls the
 number of worker threads via the \texttt{PARLAY\_NUM\_THREADS} environment
-variable, which we use to sweep core counts in our evaluation.
+variable, which we use to sweep core counts in our evaluation. 
 
-A \emph{bulk-synchronous parallel} (BSP) pass alternates between parallel work
-and global barriers. Our parallel closure is structured this way: each round
-runs a full data-parallel pipeline (gather frontier $\to$ canonicalize $\to$
-semisort by signature $\to$ merge groups), then the next round starts only once
-the previous one's unions are visible to all workers. Within a round, every step
-of the pipeline is a single parlay primitive over a single sequence, so the
-runtime can stripe the work across threads without us writing any explicit
-synchronization.
+% A
+% \emph{bulk-synchronous parallel} (BSP) pass alternates between parallel work and
+% global barriers. 
+
+
+% Our parallel closure is structured this way: each round
+% runs a full data-parallel pipeline (gather frontier $\to$ canonicalize $\to$
+% semisort by signature $\to$ merge groups), then the next round starts only once
+% the previous one's unions are visible to all workers. Within a round, every step
+% of the pipeline is a single parlay primitive over a single sequence, so the
+% runtime can stripe the work across threads without us writing any explicit
+% synchronization.
