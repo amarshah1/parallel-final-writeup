@@ -166,3 +166,81 @@ url = {https://www.sciencedirect.com/science/article/pii/S0747717189800185},
 author = {Paris C. Kanellakis and Peter Z. Revesz},
 abstract = {Congruence closure is a fundamental operation for symbolic computation. Unification closureis defined as its directional dual, i.e., on the same inputs but top-down as opposed to bottom-up. Unifying terms is another fundamental operation for symbolic computation and is commonly computed using unification closure. We clarify the directional duality by reducing unification closure to a special form of congruence closure. This reduction reveals a correspondence between repeated variables in terms to be unified and equalities of monadic ground terms. We then show that: (1) single equality congruence closure on a directed acyclic graph, and (2) acyclic congruence closure of a fixed number of equalities, are in the parallel complexity class NC. The directional dual unification closures in these two cases are known to be log-space complete for PTIME. As a consequence of our reductions we show that if the number of repeated variables in the input terms is fixed, then term unification can be performed in NC; this extends the known parallelizable cases of term unification. Using parallel complexity we also clarify the relationship of unification closure and the testing of deterministic finite automata for equivalence.}
 }
+
+% --- Newly added references ---
+
+@incollection{smt,
+  author    = {Barrett, Clark and Sebastiani, Roberto and Seshia, Sanjit A. and Tinelli, Cesare},
+  title     = {Satisfiability Modulo Theories},
+  booktitle = {Handbook of Satisfiability},
+  editor    = {Biere, Armin and Heule, Marijn and van Maaren, Hans and Walsh, Toby},
+  series    = {Frontiers in Artificial Intelligence and Applications},
+  volume    = {185},
+  pages     = {825--885},
+  publisher = {IOS Press},
+  year      = {2009},
+}
+
+@inproceedings{eqsat,
+  author    = {Tate, Ross and Stepp, Michael and Tatlock, Zachary and Lerner, Sorin},
+  title     = {Equality Saturation: A New Approach to Optimization},
+  booktitle = {Principles of Programming Languages (POPL)},
+  year      = {2009},
+  pages     = {264--276},
+  publisher = {ACM},
+  doi       = {10.1145/1480881.1480915},
+}
+
+@article{egglog,
+  author    = {Zhang, Yihong and Wang, Yisu Remy and Flatt, Oliver and Cao, David and Zucker, Philip and Rosenthal, Eli and Tatlock, Zachary and Willsey, Max},
+  title     = {Better Together: Unifying {Datalog} and Equality Saturation},
+  journal   = {Proc. ACM Program. Lang.},
+  volume    = {7},
+  number    = {PLDI},
+  year      = {2023},
+  articleno = {125},
+  doi       = {10.1145/3591239},
+}
+
+@phdthesis{egraphs,
+  author = {Nelson, Charles Gregory},
+  title  = {Techniques for Program Verification},
+  school = {Stanford University},
+  year   = {1980},
+}
+
+@inproceedings{herbie,
+  author    = {Panchekha, Pavel and Sanchez-Stern, Alex and Wilcox, James R. and Tatlock, Zachary},
+  title     = {Automatically Improving Accuracy for Floating Point Expressions},
+  booktitle = {Programming Language Design and Implementation (PLDI)},
+  year      = {2015},
+  pages     = {1--11},
+  publisher = {ACM},
+  doi       = {10.1145/2737924.2737959},
+}
+
+@inproceedings{bridges,
+  author    = {Brown, Shawn T. and Buitrago, Paola and Hanna, Edward and Sanielevici, Sergiu and Scibek, Robin and Nystrom, Nicholas A.},
+  title     = {{Bridges-2}: A Platform for Rapidly-Evolving and Data Intensive Research},
+  booktitle = {Practice and Experience in Advanced Research Computing (PEARC)},
+  year      = {2021},
+  publisher = {ACM},
+  doi       = {10.1145/3437359.3465593},
+}
+
+@inproceedings{shortproofs,
+  author    = {Flatt, Oliver and Coward, Samuel and Willsey, Max and Tatlock, Zachary and Panchekha, Pavel},
+  title     = {Small Proofs from Congruence Closure},
+  booktitle = {Formal Methods in Computer-Aided Design (FMCAD)},
+  year      = {2022},
+  pages     = {75--83},
+  publisher = {TU Wien Academic Press},
+}
+
+@misc{eggcc,
+  author       = {{egraphs-good}},
+  title        = {{eggcc}: An experimental optimizing compiler for {Bril}},
+  howpublished = {\url{https://github.com/egraphs-good/eggcc}},
+  year         = {2024},
+  note         = {Accessed: 2026-05-01},
+}
