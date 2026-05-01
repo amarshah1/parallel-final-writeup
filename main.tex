@@ -1,24 +1,21 @@
-\documentclass[
-  % doi=10.XXXX/XXXXXX,   % Uncomment and fill in for the camera-ready version.
-  % startpage=1,           % Uncomment and set first page number for the camera-ready version.
-  year=26,                 % Two-digit year (FMCAD 20YY).
-]{fmcad}
+\documentclass[acmsmall,nonacm]{acmart}
+
+% Suppress ACM-specific reference/copyright machinery for class draft.
+\settopmatter{printacmref=false, printccs=false, printfolios=true}
+\setcopyright{none}
 
 \usepackage[T1]{fontenc}
 \usepackage[utf8]{inputenc}
 \usepackage{microtype}
-\usepackage{cite}
-\usepackage{amsmath,amssymb,amsfonts}
+% Note: acmart already loads amsmath/amssymb/amsfonts.
 \usepackage{algorithm}
-% \usepackage{algorithmic}
 \usepackage{graphicx}
 \usepackage{subcaption}
 \usepackage{textcomp}
 \usepackage{xcolor}
-\usepackage{booktabs} 
+\usepackage{booktabs}
 \usepackage{algpseudocodex}
-% \usepackage{algorithm2e} % conflicts with `algorithm` (both define \algorithm)
-\usepackage[square,comma,numbers,sort&compress]{natbib}      % Offers more control over citation appearance and bib spacing
+% Note: acmart loads natbib itself; do not reload it.
 
 % Relax float-placement parameters so figures don't get pushed to the end.
 \renewcommand{\topfraction}{0.95}
@@ -64,29 +61,33 @@
 \makeatother
 
 
-% Hide the FMCAD logo in the title-page header for now.
-% (Use a single invisible space rather than empty content so that the
-%  enclosing \resizebox in the class file does not divide by zero.)
-\renewcommand{\fmcadsymbol}{\hphantom{x}}
-
 \begin{document}
 
 \title{A Parallel Congruence Closure Algorithm}
 
-\author{
-  \IEEEauthorblockN{Zak Kent\IEEEauthorrefmark{1},
-                    Amar Shah\IEEEauthorrefmark{2}}
-  \IEEEauthorblockA{\IEEEauthorrefmark{1}Carnegie Mellon University,
-                    \texttt{zkent@cmu.edu}}
-  \IEEEauthorblockA{\IEEEauthorrefmark{2}Carnegie Mellon University,
-                    \texttt{amarshah@cmu.edu}}
+\author{Zak Kent}
+\affiliation{%
+  \institution{Carnegie Mellon University}
+  \city{Pittsburgh}
+  \state{PA}
+  \country{USA}
 }
+\email{zkent@cmu.edu}
 
-\maketitle
+\author{Amar Shah}
+\affiliation{%
+  \institution{Carnegie Mellon University}
+  \city{Pittsburgh}
+  \state{PA}
+  \country{USA}
+}
+\email{amarshah@cmu.edu}
 
 \begin{abstract}
   Abstract goes here.
 \end{abstract}
+
+\maketitle
 
 
 \input{sections/1-intro}
@@ -100,7 +101,7 @@
 \input{sections/5-discussion.tex}
 
 
-\bibliographystyle{IEEEtran}
+\bibliographystyle{ACM-Reference-Format}
 \bibliography{references}
 
 \end{document}

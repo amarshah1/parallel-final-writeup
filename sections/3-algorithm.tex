@@ -55,16 +55,14 @@ At each round, we want to group congruent terms based on newly discovered equali
 
 At each round, we maintain a set of terms whose congruence classes may need to be updated. Intially, this comprises all terms appearing in base equalities. We then group congruent terms based on the equalities currently discovered, and merge the congruence classes of each group in the union-find. Grouping is accomplished via semisort---the \texttt{group\_by} operation in \texttt{parlay}---and merging congruence classes is accomplished through taking the union of the corresponding equality classes in the union-find.
 
-We then propagate terms whose congruence classes may have changed to the next round. These are exactly the \emph{predecessors} of nodes that whose congruence classes have changed that round. Specifically, if the congruence class of term $e$ has changed, then the congruence class of $f(e)$ may have changed as well. This requires maintaining the predecessors of every congruence class; specifically a mapping \textit{pred} between class identifiers and identifiers of predecessors of that class. This mapping must be updated every round; if two congruence classes are merged, then their predecessors must be merged as well. These rounds continue until there is no longer any work to do.
+We then propagate terms whose congruence classes may have changed to the next round. These are exactly the \emph{predecessors} of nodes that whose congruence classes have changed that round. Specifically, if the congruence class of term $e$ has changed, then the congruence class of $f(e)$ may have changed as well. This requires maintaining the predecessors of every congruence class; specifically a mapping \textit{pred} between class identifiers and identifiers of predecessors of that class. This mapping must be updated every round; if two congruence classes are merged, then their predecessors must be merged as well. These rounds continue until there is no longer any work to do. Pseudocode depicting this algorithm is shown in Figure~\ref{fig:alg:bsp}.
 
+The algorithm is decomposed into three different functions. The function \textsc{Congruent} checks whether two terms are congruent based on the equivalence classes in the union find. Two terms are congruent if they are both the same function symbol and each of their subterms are pointwise congruent.
 
-The classical Nelson--Oppen procedure~\cite{nelson-oppen-cc} maintains
-a sequential worklist of e-classes whose use-sets must be re-examined
-after a merge. We replace it with a bulk-synchronous round structure
-that exposes parallelism within each round while preserving exactly
-the same fixed point. Algorithm~\ref{alg:rounds} sketches the loop;
-all numbered steps are data-parallel.
+The \textsc{Merge} function is used to merge the equivalence classes of different terms. Specifically, given a sequence $S$ of terms, it will union the classes of every term in $S$. We take a simple divide-and-conquer approach; we merge the left and right halves (in parallel), and then \textsc{Union} the representatives of the two classes.
 
+\begin{figure}
+  \centering
 \begin{algorithmic}[1]
     \Function{Congruent}{X, Y}
       \If{$X = f(M_1,\ldots,M_n)$ and $Y = f(N_1,\ldots,N_n)$}
@@ -83,7 +81,7 @@ all numbered steps are data-parallel.
       \State $R \gets \mathit{Class}[\frac{n}{2},\ldots,n]$
       \State $\rhd$ Merge left and right halves, get their representatives
       \State $l, r \gets \Call{MergeCongruenceClass}{L} \parallel \Call{MergeCongruenceClass}{R}$
-      \Return $\Call{Union}{l, r}$ \Comment{Union left and right reps, return root}
+      \State \Return $\Call{Union}{l, r}$ \Comment{Union left and right reps, return root}
     \EndFunction
 
     \Function{ParallelClose}{equalities = $\{e_1 = e_1', \ldots, e_w = e_w'\}$}
@@ -96,10 +94,14 @@ all numbered steps are data-parallel.
             \State $\rhd$ Construct new parent lists
             \State $\mathit{groups}[\mathit{rep}] \gets \Call{ConcatMap}{\lambda \mathit{group}. \; \mathit{Parents}[\mathit{group}]}$
           \EndParFor
-          \State $\mathit{Frontier} \gets \Call{Flattem}{\mathit{groups}}$
+          \State $\mathit{Frontier} \gets \Call{Flatten}{\mathit{groups}}$
         \EndWhile
     \EndFunction
 \end{algorithmic}
+
+\caption{Round-based congruence closure algorithm}
+\label{fig:alg:bsp}
+\end{figure}
 
 % \begin{algorithmic}[1]
 %     \Function{Merge}{M, N}
@@ -124,54 +126,37 @@ all numbered steps are data-parallel.
 %     \EndFunction
 % \end{algorithmic}
 
-\begin{algorithm}
-\caption{Parallel congruence closure (one round)}
-\label{alg:rounds}
-\textbf{Input:} 
+% \begin{algorithm}
+% \caption{Parallel congruence closure (one round)}
+% \label{alg:rounds}
+% \textbf{Input:} 
 
-e-graph $G$ with concurrent UF $U$, parent-index
-$P[\,\cdot\,]$, per-class \emph{changed} flags $C[\,\cdot\,]$, after a
-batch of initial unions has marked each affected class. \\
-\textbf{Output:} A new round's worth of merges; loop until no merges
-fire.
-\begin{enumerate}
-  \item \emph{Frontier.} In parallel over class ids, \texttt{filter} $C$
-        to collect $F = \{c : C[c]\}$ and clear the corresponding flags.
-  \item \emph{Gather.} \texttt{flat\_map} $F$ through $P$ to obtain the
-        list of candidate parent e-nodes whose signature might have
-        shifted.
-  \item \emph{Canonicalize.} \texttt{map} each candidate $n$ to a
-        triple $(h, \mathit{idx}, r)$ where $h$ is a 64-bit hash of
-        $(\mathrm{op}(n), U.\textsc{find}(c_1), \dots,
-                       U.\textsc{find}(c_k))$,
-        $\mathit{idx}$ is the candidate's position in the e-node array,
-        and $r = U.\textsc{find}(\mathrm{class}(n))$.
-  \item \emph{Group.} Hash $h$ into one of $B$ buckets and apply the
-        parallel semisort of Section~\ref{subsec:semisort}.
-  \item \emph{Detect merges.} In parallel over buckets, sort within
-        each bucket by $(h, \text{lexicographic canonicalized
-        children})$ and scan adjacent pairs: every pair with equal
-        signature whose representatives differ contributes a
-        $(r_a, r_b)$ pair to a new \emph{merge list}.
-  \item \emph{Apply.} In parallel over the merge list, call
-        $U.\textsc{union}(r_a, r_b)$ and set $C[r_a] = C[r_b] =
-        \texttt{true}$.
-\end{enumerate}
-\end{algorithm}
-
-The round repeats while step~6 produces any merges. Termination is
-guaranteed because each merge strictly reduces the number of distinct
-UF roots, and the loop discovers merges only through congruence; once
-the e-graph is closed, no candidate's signature has shifted and the
-merge list is empty.
-
-Several invariants make the parallel steps safe. The e-node array is
-append-only after the build phase, so step~3 reads but never mutates
-it. The parent index $P$ may be appended to during build but is never
-re-ordered or freed during closure. The \emph{changed} flags are a
-collection of independent atomic booleans, so step~6's writes do not
-race destructively. The only shared mutable state during a round is
-the union-find itself, and that state is correct under arbitrary
-concurrency by Jayanti--Tarjan's analysis. Because every step is a
-pure ParlayLib primitive, the entire round inherits ParlayLib's
-work-stealing scheduler and its associated complexity bounds.
+% e-graph $G$ with concurrent UF $U$, parent-index
+% $P[\,\cdot\,]$, per-class \emph{changed} flags $C[\,\cdot\,]$, after a
+% batch of initial unions has marked each affected class. \\
+% \textbf{Output:} A new round's worth of merges; loop until no merges
+% fire.
+% \begin{enumerate}
+%   \item \emph{Frontier.} In parallel over class ids, \texttt{filter} $C$
+%         to collect $F = \{c : C[c]\}$ and clear the corresponding flags.
+%   \item \emph{Gather.} \texttt{flat\_map} $F$ through $P$ to obtain the
+%         list of candidate parent e-nodes whose signature might have
+%         shifted.
+%   \item \emph{Canonicalize.} \texttt{map} each candidate $n$ to a
+%         triple $(h, \mathit{idx}, r)$ where $h$ is a 64-bit hash of
+%         $(\mathrm{op}(n), U.\textsc{find}(c_1), \dots,
+%                        U.\textsc{find}(c_k))$,
+%         $\mathit{idx}$ is the candidate's position in the e-node array,
+%         and $r = U.\textsc{find}(\mathrm{class}(n))$.
+%   \item \emph{Group.} Hash $h$ into one of $B$ buckets and apply the
+%         parallel semisort of Section~\ref{subsec:semisort}.
+%   \item \emph{Detect merges.} In parallel over buckets, sort within
+%         each bucket by $(h, \text{lexicographic canonicalized
+%         children})$ and scan adjacent pairs: every pair with equal
+%         signature whose representatives differ contributes a
+%         $(r_a, r_b)$ pair to a new \emph{merge list}.
+%   \item \emph{Apply.} In parallel over the merge list, call
+%         $U.\textsc{union}(r_a, r_b)$ and set $C[r_a] = C[r_b] =
+%         \texttt{true}$.
+% \end{enumerate}
+% \end{algorithm}
