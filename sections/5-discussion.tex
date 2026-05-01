@@ -22,24 +22,20 @@ We answer the research questions as follows:
 \end{itemize}
 
 
-
 \subsection{Limitations of Evaluation}
 
+There are several limitations of our evaluation that we hope to address in future work.
 
+\textbf{Machine Setup.} We had hoped to run our final benchmarks on a modern Amazon EC2 \texttt{c8i.metal-48xl} instance (on which we had obtained more promising preliminary results), but were limited by time and cost to run our final benchmark suite on this machine. Our final benchmark suite took over 6 hours to complete, which would have cost about \$60 on the EC2 instance.
 
-\subsection{Limitations of Algorithm}
+\textbf{Workloads.} We hope in the future to evaluate our implementation on a wider-reaching and more realistic set of benchmarks. For example, we hope evaluate our implementation on \texttt{smtlib} benchmarks, which requires support for disjunctions in forumulas, e.g. those of the form $x = y \vee w = z$. We plan to accomodate disjunctions by first running a SAT solver to assign truth values to every disjunction, and then running our congruence closure on the selected clauses.
 
-- reliance on bulk-synchronous parallelism; a truly concurrent algorithm could
-be more efficient and have better speedups, but is more difficult to design and
-implement
+\textbf{Comparisons to Baseline.} We have implemented a very simple sequential baseline based on the classic Nelson-Oppen algorithm. In the future, we hope to extend our evaluation to compare to state-of-the-art sequential solvers, like those in \texttt{egg}. It is not quite an apples-to-apples comparison, since these solvers support more features (like dynamic addition of E-nodes) that we do not.
 
-- non backtrackability
+\subsection{Limitations of Algorithm and Future Work}
 
-- does not support proof generation, which is important for SMT solvers
+There are several limitations to the algorithm as presented that we would like to address in future work. The largest is likely the synchronous round structure, which inherently limits parallel scaling. In particular, the instance size processed at each round is small relative to the size of the problem for several benchmarks we have examined (like the \texttt{egg} benchmarks). We will likely have to take a more asynchronous approach to achieve bett thread scaling; this would entail generating new congruences from discovered equalities immediately instead of waiting for the round to complete.
 
-- does not support incremental updates, which is important for SMT solvers and
-equality saturation engines
+Additionally, our approach is not \textit{backtrackable}, meaning that it is not possible to derive an extractable proof how why a congruence holds (i.e. the proof tree). This is needed for generating witnesses in SMT solvers. Implementing backtrackability requires maintaining the path along the union find that represents a chain of equalities, which is extremely difficult in a concurrent setting when updates arrive asynchronously and the path is constantly changing. It may be possible to use snapshotting techniques in order to derive this path.
 
-\subsection{Potential Future Work}
-
-- truly concurrent algorithm that doesn't rely on bulk-synchronous parallelism
+Finally, we would like to support our implementation to incremental updates (where equalities and new E-node may arrive dynamically). This is important for both equality saturation and SMT solvers, where new equalities may be discovered via for example quantifier instantiation.
