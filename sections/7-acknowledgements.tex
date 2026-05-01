@@ -1,0 +1,8 @@
+\section{Acknowledgements}
+\label{sec:acks}
+
+\textbf{AI Usage.} We employed AI  to develop our prototype implementation while maintaining intellectual ownership over all code generated. We used Claude Opus 4.6 and 4.7 in Agent Mode to synthesize code for us given detailed pseudocode. Specifically, our workflow was generally to prompt Claude with pseudocode at the level presented in Section~\ref{sec:alg} and then refine the result Claude produced. Claude required extensive babysitting to write good parallel code, and often default to writing sequential loops that would tank our performance, likely due to a lack of training data for parallel code. We often had to specify the exact primitives and \texttt{parlay} functions to use. Overall, we are unsure whether using Claude to generate code for this project resulted in any major time savings given the amount of manual rewriting and refinement required.
+
+We did find it to be extremely useful for orchestrating performance debugging (e.g. inserting tracing and running \texttt{perf}), which usually requires large amounts of boilerplate and arcane incantations. We also found it useful for generating benchmark/plotting infrastructure and tests. 
+
+We believe that this use of AI falls within acceptable guidelines, given that we maintained intellectual ownership over all material produced. Moreover, we were operating given Guy's rough guidelines from class, in which he stated that we just needed to disclose AI use and most of the writeup should be done by hand. By the time that Andrew had sent his clarification, the bulk of the project was already complete.
