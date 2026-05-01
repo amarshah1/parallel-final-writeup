@@ -3,117 +3,90 @@
 
 \subsection{Congruence closure}
 
-The \emph{congruence closure} procedure decides whether a finite conjunction of
-equalities and disequalities over uninterpreted function symbols is satisfiable.
-Two terms are \emph{congruent} when they have the same operator and
-pairwise-congruent children: $f(s_1, \ldots, s_k) \equiv f(t_1, \ldots, t_k)$
-whenever $s_i \equiv t_i$ for every $i$. Together with reflexivity, symmetry,
-and transitivity of equality, this gives an equivalence relation on terms;
-closing under it propagates a small set of asserted equalities to all of their
-consequences.
+\emph{Congruence closure} takes in terms like $x, y, f(x), g(x, y)$ and
+equalities over these terms like $x = y$. It keeps track of these terms using a
+datastructure called an \emph{e-graph}~\cite{egraphs}, which
+maintains a partition of terms into equivalence classes.
 
-If an SMT solver is given a disequality $s \neq t$ and if $s$ and $t$ are in the
-same equivalence class, then it knows the formula is unsatisfiable. Similarly,
-an equality saturation engine may ask if two programs $P$ and $Q$ are equivalent
-under a set of rewrite rules by checking if $P$ and $Q$ are in the same
-equivalence class.
+Two terms are \emph{congruent} if they are equal (i.e. we are given $x = y$)
+when they have the same function and pairwise-congruent children: $f(s_1,
+\ldots, s_k) \equiv f(t_1, \ldots, t_k)$ whenever $s_i \equiv t_i$ for every
+$i$. Together with reflexivity, symmetry, and transitivity of equality, this
+gives an equivalence relation on terms; closing under it propagates a small set
+of asserted equalities to all of their consequences.
 
-Hence, the decision problem of congruence closure is to determine
-whether any two terms are in the same equivalence class
-after closing under the asserted equalities and congruence.
+This is useful in practice for SMT solvers. If given a disequality $s \neq t$
+and if $s$ and $t$ are in the same equivalence class, then it knows the formula
+is unsatisfiable. Similarly, an equality saturation engine may ask if two
+programs $P$ and $Q$ are equivalent under a set of rewrite rules by checking if
+$P$ and $Q$ are in the same equivalence class.
 
-The classical algorithm of Nelson and
-Oppen~\cite{nelson-oppen-cc} maintains a union-find over equivalence
-classes of subterms, plus a hashcons that maps every canonicalized
-e-node to its current class. A worklist holds classes that have just
-been merged. Processing a class involves walking its
-\emph{parent list}---all e-nodes that mention this class as a direct
+Hence, the decision problem of congruence closure is to determine whether any
+two terms are in the same equivalence class after closing under the asserted
+equalities and congruence.
+
+The classical algorithm of Nelson and Oppen~\cite{nelson-oppen-cc} maintains a
+union-find over equivalence classes of subterms. A worklist holds classes that
+have just been merged. Processing a class involves walking its \emph{parent
+list}---all e-nodes that mention this class as a direct
 child---re-canonicalizing each, and merging any pair that the hashcons
-identifies as a duplicate. New merges produce new worklist entries; the
-loop runs to a fixed point. 
+identifies as a duplicate. New merges produce new worklist entries; the loop
+runs to a fixed point. 
 
 \subsection{Motivating Example}
 \label{sec:bg:motivating}
 
-To make the structure concrete, consider the smallest non-trivial
-instance of what we call the \emph{quadratic} family of benchmarks
-(Section~\ref{sec:eval}). For parameter $n = 2$:
+To make the structure concrete, consider the formula:
 %
-\begin{verbatim}
-(declare-fun f (U U) U)
-(declare-fun g (U U) U)
-(declare-const a0 U)  (declare-const b0 U)
-(declare-const a1 U)  (declare-const b1 U)
-(assert (= a0 b0))
-(assert (= a1 b1))
-(assert (not (=
-  (g (g (f a0 a0) (f a0 a1))
-     (g (f a1 a0) (f a1 a1)))
-  (g (g (f b0 b0) (f b0 b1))
-     (g (f b1 b0) (f b1 b1))))))
-(check-sat)
-\end{verbatim}
+\begin{align*}
+& \;\;\;\;\;\; a_0 = b_0 \\
+&\;\land\; a_1 = b_1 \\
+&\;\land\;g(f(a_0, a_0), f(a_0, a_1),\, f(a_1, a_0), f(a_1, a_1)) \\
+& \quad \neq g(f(b_0, b_0), f(b_0, b_1),\, f(b_1, b_0), f(b_1, b_1))
+\end{align*}
 %
-There are two asserted equalities, $a_0 = b_0$ and $a_1 = b_1$, and a
-single disequality between two terms built from $f$ and $g$. The
-disequality compares two balanced binary trees of $g$, each whose
-leaves are the four $f$-terms over the index set $\{0, 1\}^2$. The
-expected outcome is \texttt{unsat}.
+This formula consists of two equalities $a_0 = b_0$ and $a_1 = b_1$, and a single
+disequality between two terms built from $f$ and $g$. The disequality compares
+two applications of $g$, whose four arguments are the $f$-terms over the index
+set $\{0, 1\}^2$. The expected outcome is \texttt{unsat}.
 
-Closure proceeds as follows. After applying the two asserted unions,
-the union-find places $a_0 \equiv b_0$ and $a_1 \equiv b_1$. The
-\emph{f-layer} now sees that
-$f(a_0, a_0) \equiv f(b_0, b_0)$ by congruence (both children
-match), and similarly for the other three index pairs. That is
-$n^2 = 4$ congruence merges in a single step. Once those fire, the
-$g$-tree's bottom layer becomes pairwise congruent: $g(f(a_0,a_0),
-f(a_0,a_1)) \equiv g(f(b_0,b_0), f(b_0,b_1))$, and the analogous
-right-half merge. One step higher and the two roots collapse, at
-which point the disequality is violated.
+Closure proceeds as follows. After applying the two asserted unions, the
+union-find places $a_0 \equiv b_0$ and $a_1 \equiv b_1$. Then by congruence
+we have that $f(a_0, a_0) \equiv f(b_0, b_0)$ (both children match),
+and similarly for the other $f$-terms. 
 
-Two features make this a clean stress test for parallelism:
+Once these applications fire, the two $g$-terms become
+congruent $g(f(a_0, a_0), f(a_0, a_1),\, f(a_1, a_0), f(a_1, a_1)) \equiv
+g(f(b_0, b_0), f(b_0, b_1),\, f(b_1, b_0), f(b_1, b_1))$. Thus, the SMT solver
+knows that these two terms must be equal and thus the given formula is false.
 
-\begin{itemize}
-\item \textbf{All $n^k$ f-layer congruences are mutually independent.}
-      Their canonical signatures depend only on the post-merge roots
-      of the leaves, which are fixed once the asserted unions are
-      applied. A bulk-synchronous closure pass can detect all of
-      them in a single round, with no inter-merge serialization.
-
-\item \textbf{The remaining work is a logarithmic dependency chain.}
-      Climbing the $g$-tree requires one round per layer, and each
-      layer halves in size. So the total round count is
-      $1 + \lceil \log_2(n^k) \rceil$: one for the f-layer, and
-      $\lceil \log_2(n^k) \rceil$ for the $g$-tree.
-\end{itemize}
-
-\noindent
-We make these intuitions precise in
-Section~\ref{sec:alg}. Increasing $k$ (the arity of $f$) changes the
-benchmark from quadratic ($n^2$ congruences) to cubic ($n^3$),
-quartic ($n^4$), or quintic ($n^5$), allowing us to dial up the work
-density per round without changing the round count by much.
+Notice that this propagates in rounds: initially, the only equalities we know 
+are $a_0 = b_0$ and $a_1 = b_1$, these can be added to the union-find concurrently.
+Once these are added, the four equalities between the $f$-terms are directly implied
+by these. Hence, they can be added concurrently in the next round. Finally, once
+these are added, the two $g$-terms are equal and can be added. Hence, we can 
+finish congruence closure in three rounds of size $2, 4, 1$ respectively. This is 
+opposed to the sequential algorithm, which would process $7$ merges one at a time.
+We make these intuitions precise in Section~\ref{sec:alg}.
 
 \subsection{ParlayLib and BSP-style closure}
 
-Our implementation uses ParlayLib~\cite{parlaylib}, a C++ work-stealing
-runtime with composable parallel primitives over a contiguous
-\texttt{parlay::sequence} type. The primitives we rely on most
-directly are \texttt{parallel\_for}, \texttt{filter},
-\texttt{flatten}, and a parallel \emph{semisort}~\cite{semisort}. The
-semisort takes a sequence of (hash, payload) pairs and reorganizes
-them so that all entries with the same hash are contiguous; we use it
-to group e-nodes by canonical signature within a closure round.
-ParlayLib's scheduler controls the number of worker threads via the
-\texttt{PARLAY\_NUM\_THREADS} environment variable, which we use to
-sweep core counts in our evaluation.
+Our implementation uses ParlayLib~\cite{parlaylib}, a C++ work-stealing runtime
+with composable parallel primitives over a contiguous \texttt{parlay::sequence}
+type. The primitives we rely on most directly are \texttt{parallel\_for},
+\texttt{filter}, \texttt{flatten}, and a parallel
+\emph{semisort}~\cite{semisort}. The semisort takes a sequence of (hash,
+payload) pairs and reorganizes them so that all entries with the same hash are
+contiguous; we use it to group e-nodes by canonical signature within a closure
+round. ParlayLib's scheduler controls the number of worker threads via the
+\texttt{PARLAY\_NUM\_THREADS} environment variable, which we use to sweep core
+counts in our evaluation.
 
-A \emph{bulk-synchronous parallel} (BSP) pass alternates between
-parallel work and global barriers. Our parallel closure is structured
-this way: each round runs a full data-parallel pipeline (gather
-frontier $\to$ canonicalize $\to$ semisort by signature $\to$ merge
-groups), then the next round starts only once the previous one's
-unions are visible to all workers. Within a round, every step of the
-pipeline is a single parlay primitive over a single sequence, so the
-runtime can stripe the work across threads without us writing any
-explicit synchronization.
+A \emph{bulk-synchronous parallel} (BSP) pass alternates between parallel work
+and global barriers. Our parallel closure is structured this way: each round
+runs a full data-parallel pipeline (gather frontier $\to$ canonicalize $\to$
+semisort by signature $\to$ merge groups), then the next round starts only once
+the previous one's unions are visible to all workers. Within a round, every step
+of the pipeline is a single parlay primitive over a single sequence, so the
+runtime can stripe the work across threads without us writing any explicit
+synchronization.
