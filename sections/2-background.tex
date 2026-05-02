@@ -72,13 +72,13 @@ congruence closure in three rounds of size $2, 4, 1$ respectively. This is
 opposed to the sequential algorithm, which would process $7$ merges one at a time.
 We make these intuitions precise in Section~\ref{sec:alg}.
 
-\subsection{ParlayLib and BSP-style closure}
+% \subsection{ParlayLib and BSP-style closure}
 
-Our implementation uses ParlayLib~\cite{parlaylib}, a C++ library for efficient 
-parallel algorithms. We rely on Parlay Lib's \texttt{parallel\_for}, \texttt{filter},
-\texttt{flatten}, and a parallel \emph{semisort}~\cite{semisort}. The semisort
-takes a sequence of (hash, term) pairs and reorganizes them so that all
-entries with the same hash are contiguous; we use it to group e-nodes by
-canonical signature. ParlayLib's scheduler controls the
-number of worker threads via the \texttt{PARLAY\_NUM\_THREADS} environment
-variable, which we use to sweep core counts in our evaluation. 
+% Our implementation uses ParlayLib~\cite{parlaylib}, a C++ library for efficient 
+% parallel algorithms. We rely on Parlay Lib's \texttt{parallel\_for}, \texttt{filter},
+% \texttt{flatten}, and a parallel \emph{semisort}~\cite{semisort}. The semisort
+% takes a sequence of (hash, term) pairs and reorganizes them so that all
+% entries with the same hash are contiguous; we use it to group e-nodes by
+% canonical signature. ParlayLib's scheduler controls the
+% number of worker threads via the \texttt{PARLAY\_NUM\_THREADS} environment
+% variable, which we use to sweep core counts in our evaluation. 
