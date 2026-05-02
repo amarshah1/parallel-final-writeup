@@ -50,9 +50,9 @@ To make the structure concrete, consider the formula:
 This formula consists of two equalities $a_0 = b_0$ and $a_1 = b_1$, and a single
 disequality between two terms built from $f$ and $g$. The disequality compares
 two applications of $g$, whose four arguments are the $f$-terms over the index
-set $\{0, 1\}^2$. The expected outcome is \texttt{unsat}.
+set $\{0, 1\}^2$.
 
-Closure proceeds as follows. After applying the two asserted unions, the
+Congruence closure proceeds as follows. After applying the two asserted unions, the
 union-find places $a_0 \equiv b_0$ and $a_1 \equiv b_1$. Then by congruence
 we have that $f(a_0, a_0) \equiv f(b_0, b_0)$ (both children match),
 and similarly for the other $f$-terms. 
@@ -66,8 +66,9 @@ Notice that this propagates in rounds: initially, the only equalities we know
 are $a_0 = b_0$ and $a_1 = b_1$, these can be added to the union-find concurrently.
 Once these are added, the four equalities between the $f$-terms are directly implied
 by these. Hence, they can be added concurrently in the next round. Finally, once
-these are added, the two $g$-terms are equal and can be added. Hence, we can 
-finish congruence closure in three rounds of size $2, 4, 1$ respectively. This is 
+these are added, the two $g$-terms are equal and can be added. Using 
+our parallel algorithm (described in \autoref{sec:alg}), we can finish 
+congruence closure in three rounds of size $2, 4, 1$ respectively. This is 
 opposed to the sequential algorithm, which would process $7$ merges one at a time.
 We make these intuitions precise in Section~\ref{sec:alg}.
 
@@ -76,21 +77,8 @@ We make these intuitions precise in Section~\ref{sec:alg}.
 Our implementation uses ParlayLib~\cite{parlaylib}, a C++ library for efficient 
 parallel algorithms. We rely on Parlay Lib's \texttt{parallel\_for}, \texttt{filter},
 \texttt{flatten}, and a parallel \emph{semisort}~\cite{semisort}. The semisort
-takes a sequence of (hash, payload) pairs and reorganizes them so that all
+takes a sequence of (hash, term) pairs and reorganizes them so that all
 entries with the same hash are contiguous; we use it to group e-nodes by
-canonical signature within a closure round. ParlayLib's scheduler controls the
+canonical signature. ParlayLib's scheduler controls the
 number of worker threads via the \texttt{PARLAY\_NUM\_THREADS} environment
 variable, which we use to sweep core counts in our evaluation. 
-
-% A
-% \emph{bulk-synchronous parallel} (BSP) pass alternates between parallel work and
-% global barriers. 
-
-
-% Our parallel closure is structured this way: each round
-% runs a full data-parallel pipeline (gather frontier $\to$ canonicalize $\to$
-% semisort by signature $\to$ merge groups), then the next round starts only once
-% the previous one's unions are visible to all workers. Within a round, every step
-% of the pipeline is a single parlay primitive over a single sequence, so the
-% runtime can stripe the work across threads without us writing any explicit
-% synchronization.

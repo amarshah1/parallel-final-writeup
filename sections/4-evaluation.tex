@@ -131,8 +131,11 @@ both $i$ is sampled uniformly at random from the range $f$.
 \autoref{fig:random:loglog} shows the runtime of our parallel congruence closure
 We observe that on workloads with more nodes, our algorithm achieves a close to
 linear speedup over the sequential version. This plateaus at around 64 threads,
-for instance, 32-XL achieves a speedup of TODO\% on 64 threads and TODO\% on 128
-threads.
+for instance, 32-XL achieves a speedup of 67.9$\times$ on 64 threads and 79.6$\times$ on 128
+threads. Note that on sufficiently large workloads, we can achieve superlinear 
+speedups. We believe that this is because the bulk synchronous design is better 
+equippd for these very large workloads, and thus the parallel implementation is 
+faster thatn the 
 
 While varying the number of nodes, leads to better speedups, the results for
 varying the depth is more complicated. For instance, while \texttt{deep-s} and

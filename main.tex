@@ -29,6 +29,13 @@
 \setcounter{totalnumber}{6}
 \setcounter{dbltopnumber}{3}
 
+% Capitalize \autoref names for sections and subsections.
+\AtBeginDocument{%
+  \renewcommand{\sectionautorefname}{Section}%
+  \renewcommand{\subsectionautorefname}{Subsection}%
+  \renewcommand{\subsubsectionautorefname}{Subsubsection}%
+}
+
 % --- todo notes ---
 % Comment out the next line (or pass [disable]) before camera-ready
 % to suppress every \todo / \zk / \as marker in one go.

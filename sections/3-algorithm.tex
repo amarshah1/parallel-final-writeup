@@ -48,23 +48,51 @@ linearizes regardless of contention.
 \subsection{Parallel Semisort}
 \label{subsec:semisort}
 
-At each round, we want to group congruent terms based on newly discovered equalities. To this end, we use the \emph{semisort} of Gu, Shun, Sun, and Blelloch~\cite{semisort}. Given a type $K$, and a sequence $S$ of $K$, an equality comparator $\mathit{eq} : K \times K \to \mathbb{B}$, and a hash function $h : K \to \mathbb{N}$, semisort will group equal keys in this sequence adjacently. Concretely, we use semisort to group congruence classes at each round.
+At each round, we want to group congruent terms based on newly discovered
+equalities. We use the \emph{semisort} of Gu, Shun, Sun, and
+Blelloch~\cite{semisort}. Given an array of (hash, term) pairs, we want to sort
+the array such that all pairs with the same hash are adjacent. Concretely, we
+use semisort to group congruence classes at each round.
 
 \subsection{Rounds-Based Congruence Closure}
 \label{subsec:rounds}
 
-At each round, we maintain a set of terms whose congruence classes may need to be updated. Intially, this comprises all terms appearing in base equalities. We then group congruent terms based on the equalities currently discovered, and merge the congruence classes of each group in the union-find. Grouping is accomplished via semisort---the \texttt{group\_by} operation in \texttt{parlay}---and merging congruence classes is accomplished through taking the union of the corresponding equality classes in the union-find.
+At each round, we maintain a set of terms whose congruence classes may need to
+be updated. Intially, this comprises all terms appearing in base equalities. We
+then group congruent terms based on the equalities currently discovered, and
+merge the congruence classes of each group in the union-find. Grouping is
+accomplished via semisort---the \texttt{group\_by} operation in
+\texttt{parlay}---and merging congruence classes is accomplished through taking
+the union of the corresponding equality classes in the union-find.
 
-We then propagate terms whose congruence classes may have changed to the next round. These are exactly the \emph{predecessors} of nodes that whose congruence classes have changed that round. Specifically, if the congruence class of term $e$ has changed, then the congruence class of $f(e)$ may have changed as well. This requires maintaining the predecessors of every congruence class; specifically a mapping \textit{pred} between class identifiers and identifiers of predecessors of that class. This mapping must be updated every round; if two congruence classes are merged, then their predecessors must be merged as well. These rounds continue until there is no longer any work to do. Pseudocode depicting this algorithm is shown in Figure~\ref{fig:alg:bsp}.
+We then propagate terms whose congruence classes may have changed to the next
+round. These are exactly the \emph{parents} of nodes that whose congruence
+classes have changed that round. Specifically, if the congruence class of term
+$e$ has changed, then the congruence class of $f(e)$ may have changed as well.
+This requires maintaining the parents of every congruence class;
+specifically a mapping \textit{pred} between class identifiers and identifiers
+of parents of that class. This mapping must be updated every round; if two
+congruence classes are merged, then their parents must be merged as well.
+These rounds continue until there is no longer any work to do. Pseudocode
+depicting this algorithm is shown in Figure~\ref{fig:alg:bsp}.
 
-The algorithm is decomposed into three different functions. The function \textsc{Congruent} checks whether two terms are congruent based on the equivalence classes in the union find. Two terms are congruent if they are both the same function symbol and each of their subterms are pointwise congruent.
+The algorithm is decomposed into three different functions. The function
+\textsc{Congruent-Level1} checks whether two terms are congruent based on the
+equivalence classes in the union find\footnote{\textsc{Level1} comes from the
+fact that we are only considering congruent terms with only one level of
+nesting}. Two terms are congruent if they are both the same function symbol and
+each of their subterms are pointwise congruent.
 
-The \textsc{Merge} function is used to merge the equivalence classes of different terms. Specifically, given a sequence $S$ of terms, it will union the classes of every term in $S$. We take a simple divide-and-conquer approach; we merge the left and right halves (in parallel), and then \textsc{Union} the representatives of the two classes.
+The \textsc{MergeCongruenceClass} function is used to merge the equivalence classes of
+different terms. Specifically, given a sequence $S$ of terms, it will union the
+classes of every term in $S$. We take a simple divide-and-conquer approach; we
+merge the left and right halves (in parallel), and then \textsc{Union} the
+representatives of the two classes.
 
 \begin{figure}
   \centering
 \begin{algorithmic}[1]
-    \Function{Congruent}{X, Y}
+    \Function{Congruent-Level1}{X, Y}
       \If{$X = f(M_1,\ldots,M_n)$ and $Y = f(N_1,\ldots,N_n)$}
         \State \Return $\Call{Find}{M_i} = \Call{Find}{N_i}$ for all $i = 1,\ldots,n$
       \Else 
@@ -87,12 +115,12 @@ The \textsc{Merge} function is used to merge the equivalence classes of differen
     \Function{ParallelClose}{equalities = $\{e_1 = e_1', \ldots, e_w = e_w'\}$}
         \State $\mathit{Frontier} \gets \text{every term appearing in } \mathit{equalities}$
         \While{$\mathit{Frontier}$ is not empty}
-          \State $\mathit{groups} \gets \text{congruence classes quotiented by } \textsc{Congurent}$.
+          \State $\mathit{groups} \gets \text{congruence classes quotiented by } \textsc{Congruent-Level1}$.
           \ParFor{$\mathit{group} \in \mathit{groups}$}
             \State $\rhd$ Merge every term within congruence class
-            \State $\mathit{rep} \gets \Call{Merge}{\mathit{group}}$
+            \State $\mathit{rep} \gets \Call{MergeCongruenceClass}{\mathit{group}}$
             \State $\rhd$ Construct new parent lists
-            \State $\mathit{groups}[\mathit{rep}] \gets \Call{ConcatMap}{\lambda \mathit{group}. \; \mathit{Parents}[\mathit{group}]}$
+            \State $\mathit{Parents}[\mathit{rep}] \gets \Call{ConcatMap}{\lambda \mathit{group}. \; \mathit{Parents}[\mathit{group}]}$
           \EndParFor
           \State $\mathit{Frontier} \gets \Call{Flatten}{\mathit{groups}}$
         \EndWhile
@@ -102,61 +130,3 @@ The \textsc{Merge} function is used to merge the equivalence classes of differen
 \caption{Round-based congruence closure algorithm}
 \label{fig:alg:bsp}
 \end{figure}
-
-% \begin{algorithmic}[1]
-%     \Function{Merge}{M, N}
-%         \If{$\Call{Find}{M} = \Call{Find}{N}$}
-%             \State \Return
-%         \EndIf
-%         \State \Call{Union}{M,N}
-%         \State Let $P_M$ be the predecessors associated with the congruence class of $M$
-%         \State Let $P_N$ be the predecessors associated with the congruence class of $N$
-%         \For{$(X, Y) \in P_M \times P_N$}
-%           \If{$\Call{Find}{X} \neq \Call{Find}{Y}$ and $\Call{Congruent}{X, Y}$}
-%             \State $\Call{Merge}{X, Y}$
-%           \EndIf
-%         \EndFor
-%     \EndFunction
-%     \Function{Congruent}{X, Y}
-%       \If{$X = f(M_1,\ldots,M_n)$ and $Y = f(N_1,\ldots,N_n)$}
-%         \State \Return $\Call{Find}{M_i} = \Call{Find}{N_i}$ for all $i = 1,\ldots,n$
-%       \Else 
-%         \State \Return \textbf{false}
-%       \EndIf
-%     \EndFunction
-% \end{algorithmic}
-
-% \begin{algorithm}
-% \caption{Parallel congruence closure (one round)}
-% \label{alg:rounds}
-% \textbf{Input:} 
-
-% e-graph $G$ with concurrent UF $U$, parent-index
-% $P[\,\cdot\,]$, per-class \emph{changed} flags $C[\,\cdot\,]$, after a
-% batch of initial unions has marked each affected class. \\
-% \textbf{Output:} A new round's worth of merges; loop until no merges
-% fire.
-% \begin{enumerate}
-%   \item \emph{Frontier.} In parallel over class ids, \texttt{filter} $C$
-%         to collect $F = \{c : C[c]\}$ and clear the corresponding flags.
-%   \item \emph{Gather.} \texttt{flat\_map} $F$ through $P$ to obtain the
-%         list of candidate parent e-nodes whose signature might have
-%         shifted.
-%   \item \emph{Canonicalize.} \texttt{map} each candidate $n$ to a
-%         triple $(h, \mathit{idx}, r)$ where $h$ is a 64-bit hash of
-%         $(\mathrm{op}(n), U.\textsc{find}(c_1), \dots,
-%                        U.\textsc{find}(c_k))$,
-%         $\mathit{idx}$ is the candidate's position in the e-node array,
-%         and $r = U.\textsc{find}(\mathrm{class}(n))$.
-%   \item \emph{Group.} Hash $h$ into one of $B$ buckets and apply the
-%         parallel semisort of Section~\ref{subsec:semisort}.
-%   \item \emph{Detect merges.} In parallel over buckets, sort within
-%         each bucket by $(h, \text{lexicographic canonicalized
-%         children})$ and scan adjacent pairs: every pair with equal
-%         signature whose representatives differ contributes a
-%         $(r_a, r_b)$ pair to a new \emph{merge list}.
-%   \item \emph{Apply.} In parallel over the merge list, call
-%         $U.\textsc{union}(r_a, r_b)$ and set $C[r_a] = C[r_b] =
-%         \texttt{true}$.
-% \end{enumerate}
-% \end{algorithm}
