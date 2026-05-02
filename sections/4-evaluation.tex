@@ -118,7 +118,7 @@ frontier of changed classes, (b) semisort is the parallel semisort to group
 parent e-nodes by their current, and (c) consolidate is the parallel pass to
 union together all pairs of the same class in the semisort output. We notice
 that the semisort is the most expensive phase, taking around 25.4\%, 22.1\%, and
-19.2\% of the time in rounds $1$, $2$, and $3$ respectively. This suggests that
+19.2\% of the time in rounds $0$, $1$, and $2$ respectively. This suggests that
 optimizing the semisort phase could lead to performance improvements. We discuss
 our optimizations of semisort in \autoref{sec:impl}.
 

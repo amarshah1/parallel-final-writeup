@@ -9,8 +9,7 @@ We answer the research questions as follows:
   \item \textbf{RQ1:} Our parallel congruence closure algorithm achieves a
   sublinear, but meaningful speedup on random benchmarks, a synthetic benchmark
   suite designed to stress test our algorithm, and a set of equality saturation
-  benchmarks~\cite{eqsat}. We observe meaningful speedups up to 32 cores, but we
-  experienc a pleateau on 32 and then 64 cores.
+  benchmarks~\cite{eqsat}.
   \item \textbf{RQ2:} Our algorithm tends to perform better on benchmarks with a
   large number of merges per round. Having more rounds of congruence closure
   does not necessarily lead to worse performance, but it does not lead to better
@@ -40,7 +39,7 @@ disjunctions in forumulas, e.g. those of the form $x = y \vee w = z$.
 
 In order to accomodate disjunctions, we would have to either implement on our
 algorithm in a modern SMT solver, which is difficult because of limitations we
-discuss in \autoref{sec:disc:limit-alg}. Alternativley, we could run an existing
+discuss in \autoref{sec:disc:limit-alg}. Alternatively, we could run an existing
 SMT solver on the SMT-LIB benchmarks to obtain a set of equalities and
 disequalities that are relevant to the satisfiability of the formula, and then
 run our algorithm on these equalities and disequalities. This is future work.
@@ -61,7 +60,7 @@ to address in future work.
 limits parallel scaling. In particular, the instance size processed at each
 round is small relative to the size of the problem for several benchmarks we
 have examined (like the \texttt{egg} benchmarks). We will likely have to take a
-more asynchronous approach to achieve bett thread scaling; this would entail
+more asynchronous approach to achieve better thread scaling; this would entail
 generating new congruences from discovered equalities immediately instead of
 waiting for the round to complete.
 
