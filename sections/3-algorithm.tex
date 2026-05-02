@@ -114,17 +114,18 @@ approach; we merge the left and right halves (in parallel), and then
       return root} \EndFunction
 
     \Function{ParallelClose}{equalities = $\{e_1 = e_1', \ldots, e_w = e_w'\}$}
-        \State $\mathit{Frontier} \gets \text{every term appearing in }
-        \mathit{equalities}$ \While{$\mathit{Frontier}$ is not empty} \State
-        $\mathit{groups} \gets \text{congruence classes quotiented by }
-        \textsc{Congruent-Level1}$. \ParFor{$\mathit{group} \in
-        \mathit{groups}$} \State $\rhd$ Merge every term within congruence class
-        \State $\mathit{rep} \gets \Call{MergeCongruenceClass}{\mathit{group}}$
-        \State $\rhd$ Construct new parent lists \State
-        $\mathit{Parents}[\mathit{rep}] \gets \Call{ConcatMap}{\lambda
-        \mathit{group}. \; \mathit{Parents}[\mathit{group}]}$ \EndParFor \State
-        $\mathit{Frontier} \gets \Call{Flatten}{\mathit{groups}}$ \EndWhile
-        \EndFunction
+        \State $\mathit{Frontier} \gets \text{every term appearing in } \mathit{equalities}$
+        \While{$\mathit{Frontier}$ is not empty}
+          \State $\mathit{groups} \gets \text{congruence classes quotiented by } \textsc{Congruent-Level1}$.
+          \ParFor{$\mathit{group} \in \mathit{groups}$}
+            \State $\rhd$ Merge every term within congruence class
+            \State $\mathit{rep} \gets \Call{MergeCongruenceClass}{\mathit{group}}$
+            \State $\rhd$ Construct new parent lists
+            \State $\mathit{Parents}[\mathit{rep}] \gets \Call{ConcatMap}{\lambda \mathit{group}. \; \mathit{Parents}[\mathit{group}]}$
+          \EndParFor
+          \State $\mathit{Frontier} \gets \Call{FlatMap}{\mathit{groups}, \lambda g. \; \mathit{Parent}[\Call{Find}{g}] }$
+        \EndWhile
+    \EndFunction
 \end{algorithmic}
 
 \caption{Round-based congruence closure algorithm}
