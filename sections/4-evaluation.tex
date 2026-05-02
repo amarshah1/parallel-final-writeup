@@ -101,7 +101,7 @@ different size classes, which are shown in Table~\ref{tab:workloads}.
 
 Our first experiment plots the speedup over sequential baseline for each of
 these size classes with the number of processes fixed at $p = 192$. The results
-are shown in Figure~\ref{fig:width-speedup}: As we can see, the speedup over
+are shown in Figure~\ref{fig:random}: As we can see, the speedup over
 baseline scales rougly logarithmically with scale factor. As we see, there is a
 relative slowdown past scale factor 64x, at which point both programs become
 memory-bound. In particular, Granite Rapids Intel(R) Xeon(R) 6975P-C has a 480MB
@@ -229,18 +229,29 @@ several thousand proof obligations spanning a wide range of e-graph sizes;
 the queries we report on contain between roughly $10^3$ and $10^5$ ground
 equalities each.
 
-We find that we plateau achieves speedups of up to TODO on 32 cores, TODO on 64
-cores, and TODO on 128 cores for the Herbie benchmarks. The speedup is not as
-high as on the synthetic benchmarks, likely because the Herbie benchmarks have
-fewer merges per round and more rounds of congruence closure, which leads to
-higher overheads in our parallel algorithm. However, we still see a significant
-performance improvement over the sequential version, demonstrating the potential
-of our parallel congruence closure algorithm in real-world applications.
+We plot our speedups in \autoref{fig:egg:loglog} and the per-round merge counts
+in \autoref{fig:egg:rounds}.
+We obtain speedups up to $5.69\times$ on 8 cores, $8.99\times$ on 16 cores,
+$12.0\times$ on 32 cores, and $8.70$ on 128 cores for the Herbie benchmarks. The
+speedup is not as high as on the synthetic benchmarks, likely because the Herbie
+benchmarks have fewer merges per round and more rounds of congruence closure,
+which leads to higher overheads in our parallel algorithm. Note that the very small
+benchmarks in \autoref{fig:egg:rounds} are the ones in which the parallel algorithm 
+actually slows down on.
 
-While this speedup is impressive, it comes with the caveat that the each of these congruence closure benchmarks are relatively simple (all of them can be solved in less than $3$ seconds sequentially). We picked these benchmarks because they were used to evaluate congruence closure 
-previously~\cite{shortproofs}. Future work should try to evaluate our algorithm on more challenging benchmarks such as the equality saturation based optimizing compiler \texttt{egg-cc}~\cite{eggcc}.
-We believe our algorithm would perform well on these benchmarks, providing a meaningful speedup 
-on ``real world'' benchmarks.
+However, we still see some performance improvement over the sequential version,
+especially up to $16$ cores, demonstrating the potential of our parallel
+congruence closure algorithm in real-world applications.
+
+While this speedup is impressive, it comes with the caveat that the each of
+these congruence closure benchmarks are relatively simple (all of them can be
+solved in less than $3$ seconds sequentially). We picked these benchmarks
+because they were used to evaluate congruence closure
+previously~\cite{shortproofs}. Future work should try to evaluate our algorithm
+on more challenging benchmarks such as the equality saturation based optimizing
+compiler \texttt{egg-cc}~\cite{eggcc}. We believe our algorithm would perform
+well on these benchmarks, providing a meaningful speedup on ``real world''
+benchmarks.
 
 \begin{figure*}[!t]
   \centering
