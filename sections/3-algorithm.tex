@@ -1,19 +1,11 @@
 \section{Algorithm}
 \label{sec:alg}
 
-This section describes our parallel congruence closure procedure in
-detail. The algorithm rests on three components: a lock-free concurrent
-union-find that allows arbitrarily many threads to issue
-\textsc{find}/\textsc{union} concurrently
-(Section~\ref{subsec:uf}); a parallel semisort that lets each round
-group congruent e-node candidates by signature without a sequential
-hash-table bottleneck (Section~\ref{subsec:semisort}); and a
-bulk-synchronous, rounds-based outer loop that drives both to a
-congruence-closed fixed point (Section~\ref{subsec:rounds}). All three
-build on \textsc{ParlayLib}~\cite{parlaylib}, a shared-memory
-work-stealing runtime that supplies the sequence types and parallel
-primitives (\texttt{parallel\_for}, \texttt{filter},
-\texttt{flat\_map}, \texttt{group\_by\_key}) that we use throughout.
+This section describes our bulk-synchronous-parallel approach to computing congruence
+closure. We first describe the two workhorses of our algorithm: a concurrent
+union-find data structure used to maintain congruence closure, and \textit{semisort},
+a parallel primitive offered by \texttt{parlaylib}~\cite{parlaylib} that we use to group congruent terms.
+We then describe how we use these components to develop our final algorithm.
 
 \subsection{Concurrent Union-Find}
 \label{subsec:uf}
