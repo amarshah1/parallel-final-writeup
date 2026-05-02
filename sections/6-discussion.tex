@@ -1,0 +1,86 @@
+\section{Discussion and Future Work}
+\label{sec:disc}
+
+\subsection{Answer to Research Questions}~\label{sec:disc:rq}
+
+We answer the research questions as follows:
+
+\begin{itemize}
+  \item \textbf{RQ1:} Our parallel congruence closure algorithm achieves a
+  sublinear, but meaningful speedup on random benchmarks, a synthetic benchmark
+  suite designed to stress test our algorithm, and a set of equality saturation
+  benchmarks~\cite{eqsat}. We observe meaningful speedups up to 32 cores, but we
+  experienc a pleateau on 32 and then 64 cores.
+  \item \textbf{RQ2:} Our algorithm tends to perform better on benchmarks with a
+  large number of merges per round. Having more rounds of congruence closure
+  does not necessarily lead to worse performance, but it does not lead to better
+  performance either as we only parallelize within rounds.
+  \item \textbf{RQ3:} Our algorithm provides a meaningful speedup over a
+  sequential implementation on the egg benchmarks. Future work should evaluate
+  our algorithm on benchmarks from SMT solvers and  more challenging equality
+  saturation benchmarks such as \texttt{egg-cc}~\cite{eggcc}.
+\end{itemize}
+
+
+\subsection{Limitations of Evaluation}~\label{sec:disc:limit-eval}
+
+There are several limitations of our evaluation that we hope to address in
+future work.
+
+\textbf{Machine Setup.} We had hoped to run our final benchmarks on a modern
+Amazon EC2 \texttt{c8i.metal-48xl} instance (on which we had obtained more
+promising preliminary results), but were limited by time and cost to run our
+final benchmark suite on this machine. Our final benchmark suite took over 6
+hours to complete, which would have cost about \$60 on the EC2 instance.
+
+\textbf{Workloads.} We hope in the future to evaluate our implementation on a
+wider-reaching and more realistic set of benchmarks. For example, we hope
+evaluate our implementation on SMT-LIB benchmarks, which requires support for
+disjunctions in forumulas, e.g. those of the form $x = y \vee w = z$.
+
+In order
+to accomodate disjunctions, we would have to either implement on our algorithm 
+in a modern SMT solver, which is difficult because of limitations we discuss in 
+\autoref{sec:disc:limit-alg}. Alternativley, we could run an existing SMT solver
+on the SMT-LIB benchmarks to obtain a set of equalities and disequalities that
+are relevant to the satisfiability of the formula, and then run our algorithm on
+these equalities and disequalities. This is future work.
+
+\textbf{Comparisons to Baseline.} We have implemented a very simple sequential
+baseline based on the classic Nelson-Oppen algorithm. In the future, we hope to
+extend our evaluation to compare to state-of-the-art sequential solvers, like
+those in \texttt{egg} and \texttt{egglog}. 
+% It is not quite an apples-to-apples comparison, since
+% these solvers support more features (like dynamic addition of e-nodes) that we
+% do not.
+
+\subsection{Limitations of Algorithm and Future Work}~\label{sec:disc:limit-alg}
+
+There are several limitations to the algorithm as presented that we would like
+to address in future work. 
+
+\textbf{Synchronous Round Structure.} Our synchronous round structure inherently
+limits parallel scaling. In particular, the instance size processed at each
+round is small relative to the size of the problem for several benchmarks we
+have examined (like the \texttt{egg} benchmarks). We will likely have to take a
+more asynchronous approach to achieve bett thread scaling; this would entail
+generating new congruences from discovered equalities immediately instead of
+waiting for the round to complete.
+
+\textbf{Backtracking.} Our approach is not \textit{backtrackable}, meaning that
+it is not possible to derive an extractable proof how why a congruence holds
+(i.e. the proof tree). 
+Implementing backtrackability requires maintaining the path along the union find
+that represents a chain of equalities, which is extremely difficult in a
+concurrent setting when updates arrive asynchronously and the path is constantly
+changing. It may be possible to use snapshotting techniques in order to derive
+this path.
+
+\textbf{Proof Production.} Our implementation does not produce \emph{proofs} or 
+\emph{witnesses} of the equalities it discovers. This is important for applications like
+
+
+Finally, we would like to support our implementation to incremental updates
+(where equalities and new E-node may arrive dynamically). This is important for
+both equality saturation and SMT solvers, where new equalities may be discovered
+via for example quantifier instantiation.
