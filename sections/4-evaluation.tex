@@ -99,9 +99,6 @@ different size classes, which are shown in Table~\ref{tab:workloads}.
   \label{tab:workloads}
 \end{table}
 
-\as{double check that the numbers in this table are correct}
-
-
 Our first experiment plots the speedup over sequential baseline for each of
 these size classes with the number of processes fixed at $p = 192$. The results
 are shown in Figure~\ref{fig:width-speedup}: As we can see, the speedup over
@@ -125,8 +122,6 @@ $l$, the numbers of ``leaves'' (i.e. the ) Our first set of benchmarks is a
 synethetic benchmark that generates $w$ equalities of the form $i = j$ where
 both $i$ is sampled uniformly at random from the range $f$.
 
-\as{update \autoref{fig:random} when we have all the results for XL benchmarks.}
-
 
 \autoref{fig:random:loglog} shows the runtime of our parallel congruence closure
 We observe that on workloads with more nodes, our algorithm achieves a close to
@@ -134,8 +129,8 @@ linear speedup over the sequential version. This plateaus at around 64 threads,
 for instance, 32-XL achieves a speedup of 67.9$\times$ on 64 threads and 79.6$\times$ on 128
 threads. Note that on sufficiently large workloads, we can achieve superlinear 
 speedups. We believe that this is because the bulk synchronous design is better 
-equippd for these very large workloads, and thus the parallel implementation is 
-faster thatn the 
+equiped for these very large workloads, and thus the parallel implementation is 
+faster than the sequential implementation, even when we only have $1$ core.
 
 While varying the number of nodes, leads to better speedups, the results for
 varying the depth is more complicated. For instance, while \texttt{deep-s} and
@@ -147,15 +142,15 @@ over the total number of rounds. We evaluate this further in
 \autoref{sec:eval:synthetic}.
 
 Finally, \autoref{fig:random:phasebar} shows the time breakdown in each round.
-It takes the median percentage of time per round from all of the benchmarks.
-We measure three rounds: (a) frontier is the parallel \texttt{filter} to gather
-the frontier of changed classes, (b) semisort is the parallel semisort to group
-parent e-nodes by their current, and (c) consolidate is the parallel pass to union
-together all pairs of the same class in the semisort output. We notice that the
-semisort is the most expensive phase, taking around TODO\% of the time, while
-the frontier and consolidate phases take around TODO\% and TODO\% respectively.
-This suggests that optimizing the semisort phase could lead to significant
-performance improvements.
+It takes the median percentage of time per round from all of the benchmarks. We
+measure three rounds: (a) frontier is the parallel \texttt{filter} to gather the
+frontier of changed classes, (b) semisort is the parallel semisort to group
+parent e-nodes by their current, and (c) consolidate is the parallel pass to
+union together all pairs of the same class in the semisort output. We notice
+that the semisort is the most expensive phase, taking around 25.4\%, 22.1\%, and
+19.2\% of the time in rounds $1$, $2$, and $3$ respectively. This suggests that
+optimizing the semisort phase could lead to performance improvements. We discuss
+our optimizations of semisort in \autoref{sec:impl}.
 
 We notice that semisort is initially the largest phase in the first round, but
 as we get into later rounds it becomes cheaper as we have fewer and fewer nodes
@@ -187,7 +182,18 @@ and the width (i.e. number of merges per round) of the benchmark and the perform
 Our benchmark suite is based on the example in \autoref{ex:formula}. We create a benchmark with $2k$ leaves $a_1, \ldots, a_k$ and $b_1, \ldots, b_k$, and we assert the equalities $a_i = b_i$ for all $i$. We then have a single disequality between two terms built from $f$ and $g$. The disequality compares two applications of $g$, whose four arguments are the $f$-terms over the index set $\{1, ..., k\}^2$. The expected outcome is \texttt{unsat}. Then we create a $3^k$ terms of the form $f(a_i, a_j, a_k)$, which must be congruent to the corresponding $f(b_i, b_j, b_k)$ terms. Thus, $k$ parameterizes the width of the benchmark, as it controls how many merges are implied by the initial $k$ equalities. The depth is parameterized by some $d$ which controls how many nested $g$ applications we have. Each round will have $\frac1d$ of the merges of the previous round, so a larger
 $d$ means a slower depth. We can observe this in \autoref{fig:cube:rounds}.
 
-\autoref{fig:cube:loglog} shows the runtime of our parallel congruence closure algorithm on this benchmark suite. We observerve that increasing $k$ and hence the width of the benchmark leads to better speedups, while decreasing $d$ and hence increasing the depth of the benchmark has minimal impact. We achieve speedups of up to \_ on 128 cores for $k=155$ and $d=$TODO. This suggests that our algorithm performs well on benchmarks with a large number of merges per round, and is not significantly affected by the total number of rounds of congruence closure.
+\autoref{fig:cube:loglog} shows the runtime of our parallel congruence closure
+algorithm on this benchmark suite. We observerve that increasing $k$ and hence
+the width of the benchmark leads to better speedups, while decreasing $d$ and
+hence increasing the depth of the benchmark has minimal impact. The speedups are
+around half as good as a full linear speedup and start to plateau around $64$
+cores. For instrance, for $k=155$ and $d=5$, we achieve speedups of $7.47\times$
+on 16 cores, $13.89\times$ on 32 cores, $21.4\times$ on 64 cores, and
+$29.7\times$ on 128 cores.
+
+Overall, we can conclude that our algorithm performs well on benchmarks with a
+large number of merges per round, and is not significantly affected by the total
+number of rounds of congruence closure.
 
 
 % We can then nest this structure to create more rounds of congruence closure. For instance, we can have a disequality between two applications of $g$ whose arguments are the $f(a_i, a_j, a_k)$ terms, which would require us to first merge all of the $f$-terms before we can merge the two $g$-terms. This would give us a benchmark with depth 2. We can then repeat this process to create benchmarks with depth 3, 4, and so on.
@@ -223,7 +229,13 @@ several thousand proof obligations spanning a wide range of e-graph sizes;
 the queries we report on contain between roughly $10^3$ and $10^5$ ground
 equalities each.
 
-We find that we plateau  achieves speedups of up to \_ on 32 cores, \_ on 64 cores, and \_ on 128 cores for the Herbie benchmarks. The speedup is not as high as on the synthetic benchmarks, likely because the Herbie benchmarks have fewer merges per round and more rounds of congruence closure, which leads to higher overheads in our parallel algorithm. However, we still see a significant performance improvement over the sequential version, demonstrating the potential of our parallel congruence closure algorithm in real-world applications.
+We find that we plateau achieves speedups of up to TODO on 32 cores, TODO on 64
+cores, and TODO on 128 cores for the Herbie benchmarks. The speedup is not as
+high as on the synthetic benchmarks, likely because the Herbie benchmarks have
+fewer merges per round and more rounds of congruence closure, which leads to
+higher overheads in our parallel algorithm. However, we still see a significant
+performance improvement over the sequential version, demonstrating the potential
+of our parallel congruence closure algorithm in real-world applications.
 
 While this speedup is impressive, it comes with the caveat that the each of these congruence closure benchmarks are relatively simple (all of them can be solved in less than $3$ seconds sequentially). We picked these benchmarks because they were used to evaluate congruence closure 
 previously~\cite{shortproofs}. Future work should try to evaluate our algorithm on more challenging benchmarks such as the equality saturation based optimizing compiler \texttt{egg-cc}~\cite{eggcc}.
