@@ -97,7 +97,7 @@ representatives of the two classes.
             \State $\rhd$ Construct new parent lists
             \State $\mathit{Parents}[\mathit{rep}] \gets \Call{ConcatMap}{\lambda \mathit{group}. \; \mathit{Parents}[\mathit{group}]}$
           \EndParFor
-          \State $\mathit{Frontier} \gets \Call{Flatten}{\mathit{groups}}$
+          \State $\mathit{Frontier} \gets \Call{FlatMap}{\mathit{groups}, \lambda g. \; \mathit{Parent}[\Call{Find}{g}] }$
         \EndWhile
     \EndFunction
 \end{algorithmic}
