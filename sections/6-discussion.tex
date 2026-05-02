@@ -38,21 +38,19 @@ wider-reaching and more realistic set of benchmarks. For example, we hope
 evaluate our implementation on SMT-LIB benchmarks, which requires support for
 disjunctions in forumulas, e.g. those of the form $x = y \vee w = z$.
 
-In order
-to accomodate disjunctions, we would have to either implement on our algorithm 
-in a modern SMT solver, which is difficult because of limitations we discuss in 
-\autoref{sec:disc:limit-alg}. Alternativley, we could run an existing SMT solver
-on the SMT-LIB benchmarks to obtain a set of equalities and disequalities that
-are relevant to the satisfiability of the formula, and then run our algorithm on
-these equalities and disequalities. This is future work.
+In order to accomodate disjunctions, we would have to either implement on our
+algorithm in a modern SMT solver, which is difficult because of limitations we
+discuss in \autoref{sec:disc:limit-alg}. Alternativley, we could run an existing
+SMT solver on the SMT-LIB benchmarks to obtain a set of equalities and
+disequalities that are relevant to the satisfiability of the formula, and then
+run our algorithm on these equalities and disequalities. This is future work.
 
 \textbf{Comparisons to Baseline.} We have implemented a very simple sequential
 baseline based on the classic Nelson-Oppen algorithm. In the future, we hope to
 extend our evaluation to compare to state-of-the-art sequential solvers, like
 those in \texttt{egg} and \texttt{egglog}. 
-% It is not quite an apples-to-apples comparison, since
-% these solvers support more features (like dynamic addition of e-nodes) that we
-% do not.
+% It is not quite an apples-to-apples comparison, since these solvers support
+% more features (like dynamic addition of e-nodes) that we do not.
 
 \subsection{Limitations of Algorithm and Future Work}~\label{sec:disc:limit-alg}
 
@@ -69,16 +67,18 @@ waiting for the round to complete.
 
 \textbf{Backtracking.} Our approach is not \textit{backtrackable}, meaning that
 it is not possible to derive an extractable proof how why a congruence holds
-(i.e. the proof tree). 
-Implementing backtrackability requires maintaining the path along the union find
-that represents a chain of equalities, which is extremely difficult in a
-concurrent setting when updates arrive asynchronously and the path is constantly
-changing. It may be possible to use snapshotting techniques in order to derive
-this path.
+(i.e. the proof tree). Implementing backtrackability requires maintaining the
+path along the union find that represents a chain of equalities, which is
+extremely difficult in a concurrent setting when updates arrive asynchronously
+and the path is constantly changing. It may be possible to use snapshotting
+techniques in order to derive this path.
 
-\textbf{Proof Production.} Our implementation does not produce \emph{proofs} or 
-\emph{witnesses} of the equalities it discovers. This is important for applications like
-
+\textbf{Proof Production.} Our implementation does not produce \emph{proofs} or
+\emph{witnesses} of the equalities it discovers. For instance if our algorithm
+discovers that $x = y$, it cannot replay the chain of equalities and congruences
+that led to this conclusion. This is important for a number of reasons: it is
+necessary to justify correctness and it is used to produce conflict clauses in
+SMT solvers.
 
 Finally, we would like to support our implementation to incremental updates
 (where equalities and new E-node may arrive dynamically). This is important for

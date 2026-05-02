@@ -35,7 +35,7 @@ number of benchmarks in order to answer the following research questions:
 
 We demonstrate the efficacy and limitations of our approach through a wide
 selection of benchmarks on various workloads. In \autoref{sec:eval:random}, we
-discuss a randomly generated benchmark suite to stress test our algorithm. In
+discuss a randomly generated benchmark suite. In
 \autoref{sec:eval:synthetic}, we discuss a synthetic benchmark suite that allows
 us to dial up the depth and width of the benchmark to better understand how
 these parameters affect the performance of our algorithm. Finally, in
@@ -54,19 +54,8 @@ For each run, we perform 1 warmup run and 5 timed runs, and we report the median
 
 \subsection{Leaf-only Equalities on Binary Nodes}~\label{sec:eval:random}
 
-Our first set of benchmarks is parameterized by several parameters. $l$ denotes
-the number of leaves---i.e. the ``variables'' that appear within terms. $w$
-denotes the \emph{width} of the benchmark: how many equalities are initially
-given before computing their congruence closure. The parameter $n$ denotes the
-total number of \emph{nodes}, which are non-leaf terms (e.g. function
-applications). The \emph{depth} $d$ denotes the depth of the terms, or how many
-nested function applications appear in the term. For example, the term $f(g(x))$
-has depth 2, and the term $x$ (a single variable) has depth 0. The parameter $f$
-denotes the number of function symbols. Finally, the parameter $p$ denotes the
-number of software threads.
-
-We now describe the experiments. We fix $f = 16$ and the arity of each function
-symbol to 2. For one set of experiments, we stratify our workloads into
+Our first set of benchmarks is parameterized by several parameters.
+We stratify our workloads into
 different size classes, which are shown in Table~\ref{tab:workloads}.
 
 \begin{table}[t]
@@ -87,42 +76,21 @@ different size classes, which are shown in Table~\ref{tab:workloads}.
     \texttt{4xl-d3}  &    400\,000 &  8\,000\,000 &    800\,000 & 3 & 16 \\
     \texttt{8xl-d3}  &    800\,000 & 16\,000\,000 & 1\,600\,000 & 3 & 16 \\
     \texttt{16xl-d3} &  1\,600\,000 & 32\,000\,000 & 3\,200\,000 & 3 & 16 \\
+    \texttt{32xl-d3} &  3\,200\,000 & 64\,000\,000 & 6\,400\,000 & 3 & 16 \\
     \bottomrule
   \end{tabular}
-  \caption{Synthetic workload parameters. Each workload is a layered random
-  binary-tree DAG with $n_{\text{leaves}}$ \texttt{x}-leaves plus
-  $n_{\text{leaves}}$ \texttt{y}-leaves at the base, $n_{\text{nodes}}$ function
-  nodes distributed across \emph{depth} levels with $n_{\text{fns}}$
-  uniformly-chosen operators per level, and $n_{\text{merges}}$ random
-  initial-union pairs (half \texttt{x}-\texttt{x}, half \texttt{y}-\texttt{y}).
-  All workloads use a fixed merge-density ratio $n_{\text{merges}} /
-  n_{\text{leaves}} = 2$ and a constant scaling $n_{\text{nodes}} /
-  n_{\text{leaves}} = 20$.}
+  \caption{Synthetic workload parameters. We have 16 function symbols and each
+  function appliction has arity $2$.
+  Each workload is a layered random binary-tree DAG with $n_{\text{leaves}}$
+  \texttt{x}-leaves plus $n_{\text{leaves}}$ \texttt{y}-leaves at the base,
+  $n_{\text{nodes}}$ function nodes distributed across \emph{depth} levels with
+  $n_{\text{fns}}$ uniformly-chosen operators per level, and $n_{\text{merges}}$
+  random initial-union pairs (half \texttt{x}-\texttt{x}, half
+  \texttt{y}-\texttt{y}). All workloads use a fixed merge-density ratio
+  $n_{\text{merges}} / n_{\text{leaves}} = 2$ and a constant scaling
+  $n_{\text{nodes}} / n_{\text{leaves}} = 20$.}
   \label{tab:workloads}
 \end{table}
-
-Our first experiment plots the speedup over sequential baseline for each of
-these size classes with the number of processes fixed at $p = 192$. The results
-are shown in Figure~\ref{fig:random}: As we can see, the speedup over
-baseline scales rougly logarithmically with scale factor. As we see, there is a
-relative slowdown past scale factor 64x, at which point both programs become
-memory-bound. In particular, Granite Rapids Intel(R) Xeon(R) 6975P-C has a 480MB
-shared L3 cache, and the 16x scale factor workload maintains 32M nodes $\times$
-16 bytes per node $\approx$ 512MB, already exceeding the L3 cache. Thus past
-this point both variants (baseline and BSP) become memory-bound.
-
-It is striking that parallel speedup increases monotonically with scale factor,
-well past the point where are hardware threads are saturated. This suggests that
-the per-round overheads are poorly amortized at small sizes. We validate this
-hypothesis in the following set of benchmarks, where
-
-This is because the per-round overhead is quite high relative to other d
-
-
-
-$l$, the numbers of ``leaves'' (i.e. the ) Our first set of benchmarks is a
-synethetic benchmark that generates $w$ equalities of the form $i = j$ where
-both $i$ is sampled uniformly at random from the range $f$.
 
 
 \autoref{fig:random:loglog} shows the runtime of our parallel congruence closure
