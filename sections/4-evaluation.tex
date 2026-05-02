@@ -47,7 +47,7 @@ All experiments were performed on the Bridges-2 supercomputer on nodes with 128
 cores and 256 GB RAM~\cite{bridges}. The node consisted of NVMe SSD (3.84TB);
 Mellanox ConnectX-6 HDR Infiniband 200Gb/s Adapter; and two AMD EPYC 7742 CPUS (
 each with 64 cores, 2.25-3.40GHz, 256MB L3, and 8 memory channels). We linked
-with \texttt{jemalloc} and used \texttt{numactl --interleave all} to spread
+with \texttt{jemalloc}~\cite{jemalloc} and used \texttt{numactl --interleave all} to spread
 pages evenly across sockets in a round-robin manner.
 
 For each run, we perform 1 warmup run and 5 timed runs, and we report the median of the 5 timed runs.
