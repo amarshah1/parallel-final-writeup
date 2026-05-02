@@ -13,7 +13,7 @@ round, store this in a \texttt{struct}, and perform semisort on these structs.
 Another optimization is that, when semisorting to determine congruence classes,
 we perform an equality check on a secondary hash rather than deterministically
 checking whether two terms are actually operand-wise equal as in the pseudocode
-for \textsc{Congruent} in Figure~\ref{fig:alg:bsp}. This is because we
+for \textsc{Congruent-Level1} in Figure~\ref{fig:alg:bsp}. This is because we
 empirically found that having semisort probe over every bucket using this
 deterministic equality check was very expensive. Changing the equality check to
 a secondary hash allows the equality check when probing over a bucket to be much
